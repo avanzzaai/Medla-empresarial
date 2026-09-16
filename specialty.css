@@ -845,8 +845,11 @@ section[id] { scroll-margin-top: 90px; }
 .sp-scene__detail > p { margin:0; color:rgba(255,255,255,.65); font-size:12px; line-height:1.65; animation:sp-detail .45s var(--sp-ease); }
 .sp-scene__caption { padding-top:15px; border-top:1px solid rgba(255,255,255,.09); }
 @media (max-width:680px) {
-  .sp-scene__journey { margin-inline:-2px; padding-top:46px; }
-  .sp-scene__route { top:75px; }
+  .sp-scene__journey { margin-inline:-2px; overflow-x:hidden; padding-top:46px; }
+  .sp-scene__route { top:75px; right:12.5%; left:12.5%; min-width:0; }
+  .sp-scene__stages { min-width:0; grid-template-columns:repeat(4,minmax(0,1fr)); }
+  .sp-scene__stages button { gap:9px; padding-inline:3px; }
+  .sp-scene__stages button > b { max-width:10ch; font-size:8px; overflow-wrap:anywhere; }
   .sp-scene__detail { grid-template-columns:90px 1fr; gap:20px; }
   .sp-scene__detail > div strong { font-size:27px; }
   .sp-scene__detail > p { font-size:11px; }

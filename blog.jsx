@@ -81,12 +81,179 @@ const GUIDES = [
   }
 ];
 
+const NOTE_FLOW = [
+  {
+    id: "fact",
+    label: "Situación",
+    kicker: "Hecho observable",
+    title: "Una misma solicitud sigue varios recorridos",
+    detail: "El equipo resuelve la salida principal y sus excepciones con criterios distintos y sin un registro común.",
+    mark: "01",
+  },
+  {
+    id: "question",
+    label: "Pregunta crítica",
+    kicker: "Pregunta de control",
+    title: "¿Qué decisión debe seguir siendo humana?",
+    detail: "Distingue quién propone, quién aporta contexto y quién conserva la autoridad para decidir.",
+    mark: "?",
+  },
+  {
+    id: "boundary",
+    label: "Límite",
+    kicker: "Frontera operativa",
+    title: "Las excepciones necesitan una salida hacia una persona",
+    detail: "Los casos atípicos deben llegar a un responsable con contexto suficiente para actuar.",
+    mark: "↳",
+  },
+  {
+    id: "application",
+    label: "Aplicación",
+    kicker: "Salida",
+    title: "Mapa de reglas y excepciones",
+    detail: "La nota deja hechos, preguntas y límites preparados para abrir una conversación de proyecto.",
+    mark: "✓",
+  },
+];
+
+const CATEGORY_FILTERS = [
+  { label: "Todas", categories: null },
+  { label: "Operación", categories: ["Operaciones", "Sistemas"] },
+  { label: "Decisión", categories: ["Legal", "Dirección"] },
+  { label: "Tecnología y crecimiento", categories: ["IA aplicada", "Crecimiento"] },
+];
+
+function useReducedMotion() {
+  const [reduced, setReduced] = useState(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReduced(query.matches);
+    query.addEventListener?.("change", update);
+    return () => query.removeEventListener?.("change", update);
+  }, []);
+  return reduced;
+}
+
 function NotePreview() {
-  return <aside className="note-preview" aria-label="Contenido de una nota de decisión">
-    <header><span>M/ NOTA DE DECISIÓN</span><b>01 / 06</b></header>
+  const [active, setActive] = useState(0);
+  const [running, setRunning] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const reducedMotion = useReducedMotion();
+  const autoplayStarted = useRef(false);
+  const previewRef = useRef(null);
+  const tabRefs = useRef([]);
+  const stage = NOTE_FLOW[active];
+  const atEnd = active === NOTE_FLOW.length - 1;
+
+  useEffect(() => {
+    const preview = previewRef.current;
+    if (!preview) return undefined;
+    const start = () => {
+      if (reducedMotion || autoplayStarted.current) return;
+      autoplayStarted.current = true;
+      setRunning(true);
+    };
+    const syncVisibility = () => {
+      const rect = preview.getBoundingClientRect();
+      const visibleHeight = Math.max(0, Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0));
+      const isVisible = !document.hidden && visibleHeight >= Math.min(rect.height, window.innerHeight) * .35;
+      setVisible(isVisible);
+      if (isVisible) start();
+    };
+    if (!("IntersectionObserver" in window)) {
+      syncVisibility();
+      document.addEventListener("visibilitychange", syncVisibility);
+      return () => document.removeEventListener("visibilitychange", syncVisibility);
+    }
+    const observer = new IntersectionObserver(([entry]) => {
+      const isVisible = entry.isIntersecting && !document.hidden;
+      setVisible(isVisible);
+      if (isVisible) start();
+    }, { threshold: .35 });
+    observer.observe(preview);
+    document.addEventListener("visibilitychange", syncVisibility);
+    syncVisibility();
+    return () => {
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", syncVisibility);
+    };
+  }, [reducedMotion]);
+
+  useEffect(() => {
+    if (!running || reducedMotion || !visible) return undefined;
+    const timer = window.setTimeout(() => {
+      if (active >= NOTE_FLOW.length - 2) {
+        setActive(NOTE_FLOW.length - 1);
+        setRunning(false);
+      } else setActive((value) => value + 1);
+    }, 1750);
+    return () => window.clearTimeout(timer);
+  }, [active, reducedMotion, running, visible]);
+
+  useEffect(() => {
+    if (reducedMotion) setRunning(false);
+  }, [reducedMotion]);
+
+  const selectStage = (index, { focus = false } = {}) => {
+    setActive(index);
+    setRunning(false);
+    if (focus) tabRefs.current[index]?.focus();
+  };
+
+  const move = (event, index) => {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+    event.preventDefault();
+    const next = event.key === "Home"
+      ? 0
+      : event.key === "End"
+        ? NOTE_FLOW.length - 1
+        : (index + (event.key === "ArrowRight" ? 1 : -1) + NOTE_FLOW.length) % NOTE_FLOW.length;
+    selectStage(next, { focus: true });
+  };
+
+  const toggleSequence = () => {
+    if (reducedMotion) {
+      setActive(atEnd ? 0 : active + 1);
+      return;
+    }
+    if (running) {
+      setRunning(false);
+      return;
+    }
+    if (atEnd) setActive(0);
+    if (!reducedMotion) setRunning(true);
+  };
+
+  const sequenceLabel = reducedMotion
+    ? atEnd ? "Volver al inicio" : "Siguiente paso"
+    : running ? "Pausar secuencia" : atEnd ? "Repetir secuencia" : "Continuar secuencia";
+
+  return <aside ref={previewRef} className="note-preview" aria-label="Cómo se aplica una nota de decisión">
+    <header><span>M/ NOTA DE DECISIÓN</span><button type="button" onClick={toggleSequence} aria-label={sequenceLabel}><i className={running ? "is-running" : ""} aria-hidden="true" />{sequenceLabel}</button></header>
     <div className="note-preview__title"><span>OPERACIONES · 6 MIN</span><h2>Qué dibujar antes de automatizar un proceso</h2><p>Una nota para llegar a la conversación con el proceso, las decisiones y los límites mejor definidos.</p></div>
-    <ol><li><span>01</span><div><small>CUÁNDO USARLA</small><b>Antes de elegir una herramienta</b></div><i>✓</i></li><li><span>02</span><div><small>PREGUNTA DE CONTROL</small><b>¿Qué decisión debe seguir siendo humana?</b></div><i>?</i></li><li><span>03</span><div><small>SALIDA</small><b>Mapa de reglas y excepciones</b></div><i>→</i></li></ol>
-    <footer><span>Leer · aplicar · compartir</span><i /></footer>
+    <div className="note-preview__journey">
+      <div className="note-preview__rail" aria-hidden="true"><i style={{ "--note-progress": `${active / (NOTE_FLOW.length - 1)}` }} /></div>
+      <div className="note-preview__stages" role="tablist" aria-label="Recorrido de la nota destacada">
+        {NOTE_FLOW.map((item, index) => <button
+          key={item.id}
+          ref={(node) => { tabRefs.current[index] = node; }}
+          type="button"
+          role="tab"
+          id={`note-flow-tab-${item.id}`}
+          aria-controls="note-flow-panel"
+          aria-selected={active === index}
+          tabIndex={active === index ? 0 : -1}
+          className={`${active === index ? "is-active" : ""}${active > index ? " is-complete" : ""}`}
+          onClick={() => selectStage(index)}
+          onKeyDown={(event) => move(event, index)}
+        ><span>{String(index + 1).padStart(2, "0")}</span><i aria-hidden="true" /><b>{item.label}</b></button>)}
+      </div>
+    </div>
+    <div id="note-flow-panel" className="note-preview__detail" role="tabpanel" aria-labelledby={`note-flow-tab-${stage.id}`} key={stage.id}>
+      <div><span>{stage.kicker}</span><strong>{stage.mark}</strong></div>
+      <div><h3>{stage.title}</h3><p>{stage.detail}</p></div>
+    </div>
+    <footer><span>Leer · aplicar · compartir</span><span>{String(active + 1).padStart(2, "0")} / {String(NOTE_FLOW.length).padStart(2, "0")}</span></footer>
   </aside>;
 }
 
@@ -102,10 +269,13 @@ function Hero({ onOpenCover }) {
   </header>;
 }
 
-function FilterBar({ query, setQuery, resultCount }) {
+function FilterBar({ query, setQuery, category, setCategory, resultCount }) {
   return <section className="journal-controls" aria-label="Buscar notas">
     <div className="journal-section-index"><span>Índice por decisión</span><span>{String(resultCount).padStart(2, "0")} notas</span></div>
-    <div className="journal-control-row journal-control-row--simple"><p>Contratos, operaciones, IA, datos, crecimiento y dirección.</p><label className="journal-search"><span className="sr-only">Buscar en las notas</span><span aria-hidden="true">⌕</span><input type="search" placeholder="Buscar por tema" value={query} onChange={(event) => setQuery(event.target.value)} /></label></div>
+    <div className="journal-control-row journal-control-row--simple">
+      <div className="journal-filter-group"><p>Explora por operación, decisión o tecnología.</p><div className="journal-filters" role="group" aria-label="Filtrar notas por categoría">{CATEGORY_FILTERS.map((item) => <button key={item.label} type="button" className={category === item.label ? "is-active" : ""} aria-pressed={category === item.label} onClick={() => setCategory(item.label)}>{item.label}</button>)}</div></div>
+      <label className="journal-search"><span className="sr-only">Buscar en las notas</span><span aria-hidden="true">⌕</span><input type="search" placeholder="Buscar por tema" value={query} onChange={(event) => setQuery(event.target.value)} /></label>
+    </div>
   </section>;
 }
 
@@ -202,14 +372,15 @@ function readBlogHistoryState(state = window.history.state) {
 
 function BlogApp() {
   const guideFromUrl = () => GUIDES.find((guide) => guide.id === new URLSearchParams(window.location.search).get("guide")) || null;
-  const [query, setQuery] = useState(""), [selected, setSelected] = useState(guideFromUrl);
+  const [query, setQuery] = useState(""), [category, setCategory] = useState("Todas"), [selected, setSelected] = useState(guideFromUrl);
   const lastTrigger = useRef(null);
   const activeIndexEntry = useRef(null);
   const readerOrigin = useRef(null);
   const filtered = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase("es");
-    return GUIDES.filter((guide) => !normalized || `${guide.title} ${guide.excerpt} ${guide.category} ${guide.format}`.toLocaleLowerCase("es").includes(normalized));
-  }, [query]);
+    const activeFilter = CATEGORY_FILTERS.find((item) => item.label === category);
+    return GUIDES.filter((guide) => (!activeFilter?.categories || activeFilter.categories.includes(guide.category)) && (!normalized || `${guide.title} ${guide.excerpt} ${guide.category} ${guide.format}`.toLocaleLowerCase("es").includes(normalized)));
+  }, [category, query]);
 
   const replaceBlogHistoryState = (blogState, url = window.location.href) => {
     const currentState = window.history.state && typeof window.history.state === "object" ? window.history.state : {};
@@ -290,7 +461,7 @@ function BlogApp() {
     readerOrigin.current = openedFromIndex ? "index" : "direct";
     setSelected(next);
   };
-  return <div className="journal-page"><a className="journal-skip" href="#indice">Saltar al índice</a><window.MedlaSiteHeader current="insights" /><main><Hero onOpenCover={() => openGuide(GUIDES[0])} /><FilterBar query={query} setQuery={setQuery} resultCount={filtered.length} /><GuideIndex guides={filtered} onOpen={openGuide} /><EditorialStatement /><ConversationCTA /></main><window.MedlaSiteFooter /><GuideReader guide={selected} onClose={closeReader} onNext={nextGuide} /></div>;
+  return <div className="journal-page"><a className="journal-skip" href="#indice">Saltar al índice</a><window.MedlaSiteHeader current="insights" /><main><Hero onOpenCover={() => openGuide(GUIDES[0])} /><FilterBar query={query} setQuery={setQuery} category={category} setCategory={setCategory} resultCount={filtered.length} /><GuideIndex guides={filtered} onOpen={openGuide} /><EditorialStatement /><ConversationCTA /></main><window.MedlaSiteFooter /><GuideReader guide={selected} onClose={closeReader} onNext={nextGuide} /></div>;
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(<BlogApp />);

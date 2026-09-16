@@ -103,24 +103,42 @@ function MandateConsole() {
   const reducedMotion = useReducedMotion();
   const [running, setRunning] = useState(() => !window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   const stage = MANDATE_STAGES[active];
+  const last = MANDATE_STAGES.length - 1;
 
   useEffect(() => {
     if (reducedMotion || !running) return undefined;
     const timer = window.setTimeout(() => {
-      if (active >= MANDATE_STAGES.length - 1) setRunning(false);
-      else setActive((value) => value + 1);
+      if (active >= last - 1) {
+        setActive(last);
+        setRunning(false);
+      } else setActive((value) => value + 1);
     }, 1550);
     return () => window.clearTimeout(timer);
-  }, [active, running, reducedMotion]);
+  }, [active, last, running, reducedMotion]);
 
   const select = (index) => { setActive(index); setRunning(false); };
-  const replay = () => { setActive(0); setRunning(!reducedMotion); };
+  const toggle = () => {
+    if (reducedMotion) {
+      setActive((value) => value >= last ? 0 : value + 1);
+      setRunning(false);
+      return;
+    }
+    if (running) {
+      setRunning(false);
+      return;
+    }
+    if (active >= last) setActive(0);
+    setRunning(true);
+  };
+  const controlLabel = reducedMotion
+    ? active >= last ? "VOLVER AL INICIO" : "SIGUIENTE FASE"
+    : running ? "PAUSAR" : active >= last ? "REPETIR" : "CONTINUAR";
 
   return (
     <section className="ex-console" aria-label="Demostración del recorrido de un proyecto MEDLA">
       <header className="ex-console__head">
         <div><b>M/</b><span>CONTROL DE PROYECTO</span></div>
-        <button type="button" onClick={running ? () => setRunning(false) : replay}><i className={running ? "is-live" : ""} />{running ? "EN CURSO" : "REPETIR"}</button>
+        <button type="button" onClick={toggle}><i className={running ? "is-live" : ""} />{controlLabel}</button>
       </header>
       <div className="ex-console__brief">
         <span>ESCENARIO ILUSTRATIVO / 01</span>

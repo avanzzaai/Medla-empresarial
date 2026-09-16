@@ -525,19 +525,55 @@ function useReveal() {
   }, []);
 }
 
+function useReducedMotion() {
+  const [reduced, setReduced] = useState(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReduced(query.matches);
+    query.addEventListener?.("change", update);
+    return () => query.removeEventListener?.("change", update);
+  }, []);
+  return reduced;
+}
+
 function SystemScene({ scene }) {
   const [active, setActive] = useState(0);
+  const reducedMotion = useReducedMotion();
   const [running, setRunning] = useState(() => !window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   const tabRefs = useRef([]);
+  const last = scene.nodes.length - 1;
 
   useEffect(() => {
-    if (!running || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return undefined;
+    if (reducedMotion) {
+      setRunning(false);
+      return undefined;
+    }
+    if (!running) return undefined;
     const timer = window.setTimeout(() => {
-      if (active >= scene.nodes.length - 1) setRunning(false);
-      else setActive((value) => value + 1);
+      if (active >= last - 1) {
+        setActive(last);
+        setRunning(false);
+      } else setActive((value) => value + 1);
     }, 1800);
     return () => window.clearTimeout(timer);
-  }, [active, running, scene.nodes.length]);
+  }, [active, last, reducedMotion, running]);
+
+  const toggleSequence = () => {
+    if (reducedMotion) {
+      setActive((value) => value >= last ? 0 : value + 1);
+      setRunning(false);
+      return;
+    }
+    if (running) {
+      setRunning(false);
+      return;
+    }
+    if (active >= last) setActive(0);
+    setRunning(true);
+  };
+  const controlLabel = reducedMotion
+    ? active >= last ? "Volver al inicio" : "Siguiente fase"
+    : running ? "Pausar secuencia" : active >= last ? "Repetir secuencia" : "Continuar secuencia";
 
   const move = (event, index) => {
     let next = index;
@@ -556,7 +592,7 @@ function SystemScene({ scene }) {
     <div className={`sp-scene sp-scene--${scene.mode}`} aria-label={`Diagrama interactivo: ${scene.caption}`}>
       <div className="sp-scene__topline">
         <span>{scene.code}</span>
-        <button type="button" onClick={() => { setActive(0); setRunning(!window.matchMedia("(prefers-reduced-motion: reduce)").matches); }}><i aria-hidden="true" /> {running ? "Secuencia en curso" : "Repetir secuencia"}</button>
+        <button type="button" onClick={toggleSequence}><i aria-hidden="true" /> {controlLabel}</button>
       </div>
       <div className="sp-scene__journey">
         <div className="sp-scene__route" aria-hidden="true"><i style={{ "--progress": `${active / (scene.nodes.length - 1)}` }} /></div>

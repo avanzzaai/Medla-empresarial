@@ -1,10 +1,10 @@
 const { useEffect, useRef, useState } = React;
 
 const PROJECT_RHYTHM = [
-  { id: "status", code: "01", label: "Estado", title: "Una versión común del proyecto", text: "Objetivo, alcance, progreso, bloqueos y cambios visibles para todas las áreas.", facts: [["Tramo", "Implantación / 02"], ["Progreso", "6 de 8 criterios validados"], ["Próximo cierre", "Viernes · 12:00"]] },
-  { id: "decisions", code: "02", label: "Decisiones", title: "Cada decisión deja responsable y razón", text: "Se registra qué se aprobó, qué alternativa se descartó y qué condición sigue pendiente.", facts: [["Abiertas", "2 decisiones"], ["Responsable", "Dirección del cliente"], ["Evidencia", "Expediente DEC-024"]] },
-  { id: "risks", code: "03", label: "Riesgos", title: "Los riesgos salen con impacto y tratamiento", text: "Un riesgo no se esconde en una nota: se asigna, se prioriza y se lleva a una decisión.", facts: [["Crítico", "0"], ["En tratamiento", "2"], ["Revisión", "Comité semanal"]] },
-  { id: "next", code: "04", label: "Acciones", title: "Cada reunión termina con una siguiente acción", text: "Responsable, fecha y evidencia necesaria para que el proyecto continúe sin perseguir contexto.", facts: [["Esta semana", "7 acciones"], ["Sin responsable", "0"], ["Fuera de plazo", "1"]] },
+  { id: "fit", code: "01", label: "Encaje", title: "La decisión se delimita antes de movilizar al equipo", text: "Aclaramos el resultado, la urgencia, las áreas implicadas y el acceso necesario para decidir si el proyecto debe abrirse.", output: "Decisión de encaje", facts: [["Situación", "Alta digital de proveedores"], ["Áreas", "Compras · Legal · Sistemas"], ["Próximo cierre", "Acordar el mandato"]] },
+  { id: "mandate", code: "02", label: "Mandato", title: "Una versión común del proyecto", text: "Objetivo, alcance, autoridad y criterios de aceptación quedan visibles para todas las áreas antes de construir.", output: "Mandato aprobado", facts: [["Resultado", "Alta operativa en producción"], ["Alcance", "Proceso · Datos · Integración"], ["Responsable", "Dirección del proyecto"]] },
+  { id: "implementation", code: "03", label: "Implantación", title: "Cada tramo se valida con evidencia", text: "Los criterios de aceptación, las incidencias y los riesgos se revisan antes de abrir el siguiente tramo.", output: "Solución validada", facts: [["Progreso", "6 de 8 criterios validados"], ["En tratamiento", "2 incidencias"], ["Revisión", "Comité semanal"]] },
+  { id: "transfer", code: "04", label: "Transferencia", title: "El control queda dentro del equipo", text: "Responsables, documentación y criterios de cambio acompañan a la solución cuando termina la implantación.", output: "Control transferido", facts: [["Responsable", "Operaciones + Sistemas"], ["Documentación", "Manual y criterios de cambio"], ["Revisión", "Fecha acordada con el cliente"]] },
 ];
 
 const ROLES = [
@@ -36,27 +36,113 @@ function useReveal() {
   }, []);
 }
 
+function useReducedMotion() {
+  const [reduced, setReduced] = useState(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReduced(query.matches);
+    query.addEventListener?.("change", update);
+    return () => query.removeEventListener?.("change", update);
+  }, []);
+  return reduced;
+}
+
 function GovernanceBoard() {
   const [active, setActive] = useState(0);
+  const reducedMotion = useReducedMotion();
+  const [running, setRunning] = useState(() => !window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  const [visible, setVisible] = useState(false);
   const item = PROJECT_RHYTHM[active];
+  const last = PROJECT_RHYTHM.length - 1;
   const refs = useRef([]);
+  const boardRef = useRef(null);
+
+  useEffect(() => {
+    const board = boardRef.current;
+    if (!board || !("IntersectionObserver" in window)) {
+      setVisible(true);
+      return undefined;
+    }
+    const updateVisibility = () => {
+      const rect = board.getBoundingClientRect();
+      setVisible(!document.hidden && rect.bottom > 0 && rect.top < window.innerHeight);
+    };
+    const observer = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting && !document.hidden), { threshold: .18 });
+    observer.observe(board);
+    document.addEventListener("visibilitychange", updateVisibility);
+    updateVisibility();
+    return () => {
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", updateVisibility);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (reducedMotion) {
+      setRunning(false);
+      return undefined;
+    }
+    if (!running || !visible) return undefined;
+    const timer = window.setTimeout(() => {
+      const next = active + 1;
+      if (next >= PROJECT_RHYTHM.length) {
+        setRunning(false);
+        return;
+      }
+      setActive(next);
+      if (next === PROJECT_RHYTHM.length - 1) setRunning(false);
+    }, 1900);
+    return () => window.clearTimeout(timer);
+  }, [active, running, visible, reducedMotion]);
+
+  const select = (index) => {
+    setActive(index);
+    setRunning(false);
+  };
+
+  const toggleSequence = () => {
+    if (reducedMotion) {
+      setActive((value) => value >= last ? 0 : value + 1);
+      setRunning(false);
+      return;
+    }
+    if (running) {
+      setRunning(false);
+      return;
+    }
+    if (active === last) setActive(0);
+    setRunning(true);
+  };
+
   const move = (event,index) => {
     if (!["ArrowLeft","ArrowRight","Home","End"].includes(event.key)) return;
     event.preventDefault();
     const next = event.key === "Home" ? 0 : event.key === "End" ? PROJECT_RHYTHM.length - 1 : (index + (event.key === "ArrowRight" ? 1 : -1) + PROJECT_RHYTHM.length) % PROJECT_RHYTHM.length;
-    setActive(next); refs.current[next]?.focus();
+    select(next); refs.current[next]?.focus();
   };
-  return <div className="how-board" aria-label="Ejemplo interactivo del gobierno de un proyecto">
-    <header><div><i />PROYECTO / SEMANA 03</div><span>VISTA COMPARTIDA</span></header>
-    <div className="how-board__summary"><span>MANDATO DEMOSTRATIVO</span><h2>Implantar el alta digital de proveedores.</h2><div><b>EN EJECUCIÓN</b><small>Sin bloqueo crítico</small></div></div>
-    <div className="how-board__tabs" role="tablist" aria-label="Lecturas del proyecto">
-      {PROJECT_RHYTHM.map((entry,index) => <button key={entry.id} ref={(node) => { refs.current[index] = node; }} type="button" role="tab" id={`rhythm-tab-${entry.id}`} aria-controls="rhythm-panel" aria-selected={active === index} tabIndex={active === index ? 0 : -1} onClick={() => setActive(index)} onKeyDown={(event) => move(event,index)}><span>{entry.code}</span>{entry.label}<i /></button>)}
+  const finished = active === last && !running;
+  const buttonLabel = reducedMotion
+    ? finished ? "Volver al inicio" : "Siguiente fase"
+    : running ? "Pausar" : finished ? "Repetir" : "Continuar";
+  const status = running ? "SECUENCIA EN CURSO" : finished ? "RECORRIDO COMPLETO" : "SECUENCIA EN PAUSA";
+
+  return <div ref={boardRef} className="how-board" aria-label="Secuencia interactiva del gobierno de un proyecto">
+    <header className="how-board__topbar">
+      <div><i />PROYECTO / SEMANA 03</div>
+      <button type="button" onClick={toggleSequence} aria-label={`${buttonLabel} la secuencia del proyecto`}><i className={running ? "is-running" : ""} />{buttonLabel}</button>
+    </header>
+    <div className="how-board__summary"><span>PROYECTO DEMOSTRATIVO</span><h2>Implantar el alta digital de proveedores.</h2><div aria-live="polite"><b>{status}</b><small>Un recorrido · cuatro cierres</small></div></div>
+    <div className="how-board__journey">
+      <div className="how-board__route" aria-hidden="true" style={{ "--progress": active / (PROJECT_RHYTHM.length - 1) }}><i /></div>
+      <div className="how-board__tabs" role="tablist" aria-label="Recorrido del proyecto">
+        {PROJECT_RHYTHM.map((entry,index) => <button className={`${active === index ? "is-active" : ""}${active > index ? " is-complete" : ""}`} key={entry.id} ref={(node) => { refs.current[index] = node; }} type="button" role="tab" id={`rhythm-tab-${entry.id}`} aria-controls="rhythm-panel" aria-selected={active === index} tabIndex={active === index ? 0 : -1} onClick={() => select(index)} onKeyDown={(event) => move(event,index)}><span>{entry.code}</span><i aria-hidden="true" /><b>{entry.label}</b><small>{entry.output}</small></button>)}
+      </div>
     </div>
     <article id="rhythm-panel" role="tabpanel" aria-labelledby={`rhythm-tab-${item.id}`} key={item.id}>
-      <div><span>{item.code} / {item.label}</span><h3>{item.title}</h3><p>{item.text}</p></div>
-      <dl>{item.facts.map(([label,value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
+      <div className="how-board__copy"><span>{item.code} / {item.label}</span><h3>{item.title}</h3><p>{item.text}</p></div>
+      <div className="how-board__output"><span>SALIDA ACTIVA</span><strong><i />{item.output}</strong><dl>{item.facts.map(([label,value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl></div>
     </article>
-    <footer><span><i />Responsable MEDLA</span><span><i />Responsable cliente</span><span><i />Próximo cierre</span></footer>
+    <footer><span>Mandato común</span><i /> <span>Decisiones registradas</span><i /> <strong>Control transferido</strong></footer>
   </div>;
 }
 
