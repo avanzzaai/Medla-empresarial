@@ -6,8 +6,8 @@ const SPECIALTIES = {
     eyebrow: "Criterio jurídico conectado con la ejecución",
     accent: "#79d2c5",
     hero: {
-      before: "Contratos, acuerdos y obligaciones ",
-      emphasis: "preparados para decidir y ejecutar.",
+      before: "Cada decisión, ",
+      emphasis: "bien respaldada.",
       after: "",
       lead: "Ordenamos hechos, riesgos, responsables y documentos; dejamos preparada la aprobación, firma o actuación incluida en el encargo.",
       note: "El encargo y la jurisdicción aplicable se confirman antes de intervenir.",
@@ -67,8 +67,8 @@ const SPECIALTIES = {
     eyebrow: "IA integrada en el trabajo",
     accent: "#68bcb4",
     hero: {
-      before: "Agentes de IA conectados a ",
-      emphasis: "tus datos, herramientas y procesos.",
+      before: "IA que trabaja ",
+      emphasis: "con tu equipo.",
       after: "",
       lead: "Diseñamos e implantamos agentes para consultar información, preparar tareas y activar acciones con permisos, evaluación y revisión humana.",
       note: "Cada caso de uso define qué puede hacer el agente, qué debe validar una persona y qué queda fuera.",
@@ -128,10 +128,10 @@ const SPECIALTIES = {
     eyebrow: "Flujos conectados y trazables",
     accent: "#79d2c5",
     hero: {
-      before: "Automatiza tareas y aprobaciones con ",
-      emphasis: "reglas, excepciones y responsables visibles.",
+      before: "El trabajo avanza. ",
+      emphasis: "Tú mantienes el control.",
       after: "",
-      lead: "Conectamos las herramientas necesarias y registramos cada resultado, error y escalado.",
+      lead: "Conectamos tus herramientas para que solicitudes, aprobaciones y tareas sigan su curso. Cada regla se entiende. Cada excepción tiene responsable.",
       note: "Automatizamos después de entender el proceso, no antes.",
     },
     context: "automatizacion",
@@ -189,8 +189,8 @@ const SPECIALTIES = {
     eyebrow: "Decisiones societarias de origen",
     accent: "#64b7ae",
     hero: {
-      before: "Una estructura societaria pensada ",
-      emphasis: "para operar y crecer.",
+      before: "Una empresa preparada ",
+      emphasis: "desde el principio.",
       after: "",
       lead: "Ordenamos socios, aportaciones, gobierno, documentación y trámites para que la estructura refleje cómo funcionará el proyecto.",
       note: "La secuencia concreta depende de la jurisdicción y de las características del caso.",
@@ -250,8 +250,8 @@ const SPECIALTIES = {
     eyebrow: "Sistemas para la operación",
     accent: "#68bcb4",
     hero: {
-      before: "Convierte procesos dispersos en ",
-      emphasis: "un sistema con estados, responsables y datos comunes.",
+      before: "Tu operación, ",
+      emphasis: "bien conectada.",
       after: "",
       lead: "Convertimos procesos repartidos entre hojas, correos y conocimiento informal en una solución conectada, documentada y mantenible.",
       note: "La tecnología se elige después de entender decisiones, usuarios y datos.",
@@ -311,8 +311,8 @@ const SPECIALTIES = {
     eyebrow: "Decisiones antes del compromiso",
     accent: "#5fa9a4",
     hero: {
-      before: "Evalúa una inversión con ",
-      emphasis: "datos, escenarios y documentación ordenados.",
+      before: "Antes de invertir, ",
+      emphasis: "pon los datos sobre la mesa.",
       after: "",
       lead: "Organizamos objetivos, supuestos y escenarios para que todas las partes puedan comparar alternativas sobre la misma información.",
       note: "Alcance acotado a estructura, escenarios y documentación; no incluye recomendación financiera regulada ni intermediación.",
@@ -372,8 +372,8 @@ const SPECIALTIES = {
     eyebrow: "Del mensaje al seguimiento comercial",
     accent: "#62aaa6",
     hero: {
-      before: "Convierte posicionamiento y captación en ",
-      emphasis: "oportunidades con seguimiento.",
+      before: "Cada oportunidad ",
+      emphasis: "tiene un siguiente paso.",
       after: "",
       lead: "Conectamos propuesta, contenido, formularios y CRM para que cada oportunidad llegue con contexto, responsable y próxima acción.",
       note: "El sistema se diseña alrededor del recorrido del cliente y de la capacidad real del equipo para atenderlo.",
@@ -433,8 +433,8 @@ const SPECIALTIES = {
     eyebrow: "Formularios conectados a operación",
     accent: "#79d2c5",
     hero: {
-      before: "Formularios que activan ",
-      emphasis: "el trabajo posterior.",
+      before: "Una respuesta entra. ",
+      emphasis: "El trabajo empieza.",
       after: "",
       lead: "Diseñamos formularios y portales sobre Jotform con validaciones, lógica, integraciones y seguimiento para que cada respuesta llegue al sistema y a la persona correctos.",
       note: "La herramienta es una pieza del sistema; el criterio de datos y la responsabilidad siguen perteneciendo al equipo.",
@@ -538,17 +538,35 @@ function useReducedMotion() {
 
 function SystemScene({ scene }) {
   const [active, setActive] = useState(0);
+  const [available, setAvailable] = useState(false);
   const reducedMotion = useReducedMotion();
   const [running, setRunning] = useState(() => !window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  const sceneRef = useRef(null);
   const tabRefs = useRef([]);
   const last = scene.nodes.length - 1;
+
+  useEffect(() => {
+    let inView = !("IntersectionObserver" in window);
+    const update = () => setAvailable(inView && !document.hidden);
+    const observer = "IntersectionObserver" in window ? new IntersectionObserver(([entry]) => {
+      inView = entry.isIntersecting;
+      update();
+    }, { threshold: .25 }) : null;
+    if (sceneRef.current) observer?.observe(sceneRef.current);
+    document.addEventListener("visibilitychange", update);
+    update();
+    return () => {
+      observer?.disconnect();
+      document.removeEventListener("visibilitychange", update);
+    };
+  }, []);
 
   useEffect(() => {
     if (reducedMotion) {
       setRunning(false);
       return undefined;
     }
-    if (!running) return undefined;
+    if (!running || !available) return undefined;
     const timer = window.setTimeout(() => {
       if (active >= last - 1) {
         setActive(last);
@@ -556,7 +574,7 @@ function SystemScene({ scene }) {
       } else setActive((value) => value + 1);
     }, 1800);
     return () => window.clearTimeout(timer);
-  }, [active, last, reducedMotion, running]);
+  }, [active, available, last, reducedMotion, running]);
 
   const toggleSequence = () => {
     if (reducedMotion) {
@@ -589,7 +607,7 @@ function SystemScene({ scene }) {
   };
 
   return (
-    <div className={`sp-scene sp-scene--${scene.mode}`} aria-label={`Diagrama interactivo: ${scene.caption}`}>
+    <div ref={sceneRef} className={`sp-scene sp-scene--${scene.mode}`} data-running={running && available} aria-label={`Diagrama interactivo: ${scene.caption}`}>
       <div className="sp-scene__topline">
         <span>{scene.code}</span>
         <button type="button" onClick={toggleSequence}><i aria-hidden="true" /> {controlLabel}</button>
@@ -611,7 +629,16 @@ function SystemScene({ scene }) {
               onClick={() => { setActive(index); setRunning(false); }}
               onKeyDown={(event) => move(event, index)}
             >
-              <span>{String(index + 1).padStart(2, "0")}</span><i aria-hidden="true" /><b>{node.label}</b>
+              <span>{String(index + 1).padStart(2, "0")}</span>
+              <i className="sp-scene__node-icon" aria-hidden="true">
+                <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.15" strokeLinecap="round" strokeLinejoin="round">
+                  {index === 0 && <><path d="M9 5h10l5 5v17H9zM19 5v6h5M13 16h7M13 20h5" /><path d="M5 10v17h3" opacity=".45" /></>}
+                  {index === 1 && <><path d="m16 5 11 11-11 11L5 16z" /><path d="m11 16 3 3 7-7" /></>}
+                  {index === 2 && <><path d="M5 9h9v14H5zM23 5v22M19 9l4-4 4 4M14 16h9" /><circle cx="23" cy="25" r="2" fill="currentColor" stroke="none" /></>}
+                  {index === 3 && <><rect x="6" y="5" width="20" height="22" rx="2" /><path d="m10 11 1.5 1.5L14 10M17 12h5m-12 6 1.5 1.5L14 17M17 19h5" /></>}
+                </svg>
+              </i>
+              <b>{node.label}</b>
             </button>
           ))}
         </div>
@@ -635,7 +662,7 @@ function Hero({ config }) {
           <h1 id="page-title">{config.hero.before}<em>{config.hero.emphasis}</em>{config.hero.after}</h1>
           <p className="sp-hero__lead">{config.hero.lead}</p>
           <div className="sp-actions">
-            <a className="sp-button sp-button--signal" href={`contacto.html?context=${config.context}`}>Plantear este frente <Arrow /></a>
+            <a className="sp-button sp-button--signal" href={`contacto.html?context=${config.context}`}>Hablemos de tu proyecto <Arrow /></a>
             <a className="sp-button sp-button--ghost" href="#alcance">{config.secondary} <Arrow /></a>
           </div>
           <p className="sp-hero__note"><span aria-hidden="true">◌</span>{config.hero.note}</p>
@@ -698,7 +725,7 @@ function Scope({ scope }) {
       <div className="sp-shell">
         <div className="sp-scope__head" data-reveal>
           <div className="sp-kicker sp-kicker--light"><span>03</span>Alcance del encargo</div>
-          <h2 id="scope-title">El encargo se divide en frentes con alcance, responsable y criterio de aceptación propios.</h2>
+          <h2 id="scope-title">Qué hacemos.<br />Y hasta dónde llegamos.</h2>
           <p>Selecciona un frente para ver la situación, el trabajo y el resultado esperado.</p>
         </div>
         <div className="sp-scope__workspace" data-reveal>
@@ -757,7 +784,7 @@ function Deliverables({ deliverables }) {
       <div className="sp-shell">
         <div className="sp-deliverables__head" data-reveal>
           <div className="sp-kicker"><span>04</span>Entregables</div>
-          <h2 id="deliverables-title">Estos son los documentos y configuraciones que puede incluir el encargo.</h2>
+          <h2 id="deliverables-title">El trabajo queda<br />en tus manos.</h2>
         </div>
         <div className="sp-deliverables__theatre" data-reveal>
           <article id="deliverable-panel" role="tabpanel" aria-labelledby={`deliverable-tab-${active}`} key={item.code}>
@@ -803,8 +830,8 @@ function Process({ process }) {
       <div className="sp-shell">
         <div className="sp-process__head" data-reveal>
           <div className="sp-kicker"><span>05</span>De la delimitación a la transferencia</div>
-          <h2 id="process-title">Cada fase cierra una decisión o entrega verificable antes de abrir la siguiente.</h2>
-          <p>La secuencia permite revisar avance, límites y responsabilidades sin esconder la complejidad tras una lista de tareas.</p>
+          <h2 id="process-title">De la primera pregunta<br />a la puesta en marcha.</h2>
+          <p>Acordamos qué debe quedar resuelto en cada fase. Así puedes seguir el avance y decidir con toda la información.</p>
         </div>
         <ol className="sp-process__steps">
           {process.map((step, index) => (
@@ -858,7 +885,7 @@ function App() {
   useReveal();
 
   return (
-    <div className="sp-site" style={{ "--sp-signal": config.accent }}>
+    <div className="sp-site">
       <window.MedlaSiteHeader current="services" context={config.context} />
       <main id="main-content">
         <Hero config={config} />

@@ -261,7 +261,7 @@ function Hero({ onOpenCover }) {
   return <header className="journal-hero">
     <div className="journal-hero-kicker"><span>Notas de decisión</span><span>06 notas disponibles</span></div>
     <div className="journal-hero-main"><div className="journal-hero-copy">
-      <p className="journal-overline">Criterio para aplicar</p><h1>Criterio práctico para<br /><em>preparar decisiones complejas.</em></h1>
+      <p className="journal-overline">Ideas MEDLA</p><h1>Ideas para decidir<br /><em>y trabajar mejor.</em></h1>
       <p className="journal-hero-intro">Análisis breves, preguntas de control y plantillas para dirección, operaciones y equipos de proyecto.</p>
       <button className="text-action" type="button" onClick={onOpenCover}>Abrir la nota destacada <span aria-hidden="true">↘</span></button>
     </div><NotePreview /></div>

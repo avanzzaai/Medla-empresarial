@@ -1,330 +1,146 @@
-// MEDLA — dirección e implantación de proyectos transversales
+import MedlaAperture from "./components/medla-aperture.jsx";
+
 const { useEffect, useRef, useState } = React;
-
-const PROJECT_SITUATIONS = [
-  {
-    number: "01",
-    type: "Decisión transversal",
-    title: "Una decisión con impacto en inversión, riesgo u operación exige criterio de varias áreas.",
-    text: "Reunimos hechos, contratos, escenarios y responsables para que dirección pueda comparar opciones y aprobar un alcance ejecutable.",
-    outputs: ["Documento de decisión", "Alcance aprobado", "Responsables y condiciones"],
-    href: "servicios.html#decision",
-  },
-  {
-    number: "02",
-    type: "Operaciones y sistemas",
-    title: "El crecimiento ha dejado procesos, datos y responsabilidades fuera de control.",
-    text: "Rediseñamos el recorrido, conectamos los sistemas necesarios y dejamos estados, excepciones y control visibles para el equipo.",
-    outputs: ["Modelo operativo", "Sistema implantado", "Control y documentación"],
-    href: "digitalizacion.html",
-  },
-  {
-    number: "03",
-    type: "Tecnología e IA",
-    title: "La inversión tecnológica todavía no ha llegado al uso operativo.",
-    text: "Acotamos el caso, resolvemos datos, permisos e integración y lo implantamos con revisión humana y criterios de aceptación.",
-    outputs: ["Caso priorizado", "Solución en operación", "Protocolo de calidad"],
-    href: "agentes.html",
-  },
-];
-
-const MANDATE_STAGES = [
-  { code: "01", label: "Encaje", title: "Aclarar la decisión", detail: "Objetivo, consecuencia, áreas implicadas y acceso a la información.", output: "Decisión de encaje" },
-  { code: "02", label: "Mandato", title: "Acordar alcance y gobierno", detail: "Autoridad, responsables, calendario, límites y criterio de cierre.", output: "Mandato aprobado" },
-  { code: "03", label: "Implantación", title: "Construir y probar", detail: "Especialistas coordinados, entregas por tramos y decisiones registradas.", output: "Solución validada" },
-  { code: "04", label: "Transferencia", title: "Entregar el control", detail: "Responsables internos, documentación, mantenimiento y siguiente revisión.", output: "Control transferido" },
-];
-
-const DOSSIER_CHAPTERS = [
-  {
-    id: "decision", number: "01", label: "Decisión",
-    title: "Aprobar el alta cuando llegue el certificado fiscal vigente.",
-    text: "La condición, el responsable y el plazo quedan registrados. El equipo no necesita reconstruir la decisión desde el correo.",
-    facts: [["Responsable", "Dirección de Operaciones"], ["Plazo", "Viernes · 12:00"], ["Siguiente acción", "Validar y registrar el alta"]],
-  },
-  {
-    id: "system", number: "02", label: "Sistema",
-    title: "Un recorrido único desde la recepción documental hasta el ERP.",
-    text: "Cada dato tiene una fuente, una validación y un destino. Las excepciones salen hacia una persona con todo el contexto necesario.",
-    facts: [["Alcance", "Captura, validación y sincronización"], ["Versión", "Entrega 1.4"], ["Repositorio", "Proveedores / Alta"]],
-  },
-  {
-    id: "control", number: "03", label: "Control",
-    title: "Cada incidencia tiene estado, alerta e historial.",
-    text: "El equipo puede ver qué se ha detenido, desde cuándo y quién debe intervenir sin depender del proveedor.",
-    facts: [["Estados", "Recibido · Revisión · Aprobado"], ["Alertas", "Vencimiento · Plazo superado"], ["Historial", "Hitos y cambios registrados"]],
-  },
-  {
-    id: "handover", number: "04", label: "Transferencia",
-    title: "El equipo recibe el criterio para operar y cambiar la solución.",
-    text: "La entrega incluye responsables, documentación y una revisión acordada para que el conocimiento no quede fuera de la empresa.",
-    facts: [["Operación", "Operaciones + Sistemas"], ["Documentación", "Manual y criterios de cambio"], ["Revisión", "Fecha acordada con el cliente"]],
-  },
-];
-
-function Arrow({ diagonal = false }) {
-  return <svg className="ex-arrow" viewBox="0 0 20 20" aria-hidden="true"><path d={diagonal ? "M5 15 15 5M7 5h8v8" : "M3 10h13M11 5l5 5-5 5"} /></svg>;
+function Arrow({ down = false }) {
+  return <svg className={`m-arrow${down ? " is-down" : ""}`} viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6" /></svg>;
 }
-
 function useReducedMotion() {
-  const [reduced, setReduced] = useState(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  const [value, setValue] = useState(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const update = () => setReduced(query.matches);
+    const update = () => setValue(query.matches);
     query.addEventListener?.("change", update);
     return () => query.removeEventListener?.("change", update);
   }, []);
-  return reduced;
+  return value;
 }
-
+function useInView(ref) {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return undefined;
+    if (!("IntersectionObserver" in window)) { setVisible(true); return undefined; }
+    let intersecting = false;
+    const update = () => setVisible(intersecting && !document.hidden);
+    const observer = new IntersectionObserver(([entry]) => { intersecting = entry.isIntersecting; update(); }, { threshold: .15 });
+    observer.observe(node);
+    document.addEventListener("visibilitychange", update);
+    return () => { observer.disconnect(); document.removeEventListener("visibilitychange", update); };
+  }, [ref]);
+  return visible;
+}
 function RevealController() {
   useEffect(() => {
-    const nodes = [...document.querySelectorAll("[data-reveal]")];
-    if (!("IntersectionObserver" in window)) {
-      nodes.forEach((node) => node.classList.add("is-visible"));
-      return undefined;
-    }
-    document.documentElement.classList.add("ex-reveal-ready");
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        entry.target.classList.add("is-visible");
-        observer.unobserve(entry.target);
-      });
-    }, { threshold: 0.12, rootMargin: "0px 0px -5%" });
-    nodes.forEach((node) => observer.observe(node));
-    return () => observer.disconnect();
+    if (!("IntersectionObserver" in window)) return undefined;
+    const observer = new IntersectionObserver(entries => entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      entry.target.dataset.revealed = "true";
+      observer.unobserve(entry.target);
+    }), { threshold: .08 });
+    document.querySelectorAll("[data-reveal]").forEach(node => observer.observe(node));
+    document.documentElement.classList.add("m-reveal-ready");
+    return () => { observer.disconnect(); document.documentElement.classList.remove("m-reveal-ready"); };
   }, []);
   return null;
 }
-
-function MandateConsole() {
-  const [active, setActive] = useState(0);
+function Hero() {
   const reducedMotion = useReducedMotion();
-  const [running, setRunning] = useState(() => !window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-  const stage = MANDATE_STAGES[active];
-  const last = MANDATE_STAGES.length - 1;
-
+  const [paused, setPaused] = useState(false);
+  return <section className="m-hero" aria-labelledby="hero-title">
+    <div className="m-hero__art" aria-hidden="true"><MedlaAperture paused={paused} reducedMotion={reducedMotion} /></div>
+    <div className="m-wrap m-hero__inner">
+      <div className="m-hero__copy">
+        <p className="m-kicker"><span className="m-status-dot" />Consultoría empresarial + tecnología</p>
+        <h1 id="hero-title">Tu negocio.<br /><span>Su siguiente</span><br /><span>versión.</span></h1>
+        <p className="m-hero__lead">Hay decisiones que cambian una empresa.<br />Te ayudamos a tomarlas. Y a hacerlas realidad.</p>
+        <div className="m-actions"><a className="m-button" href="contacto.html?context=proyecto">Hablemos de tu proyecto <Arrow /></a><a className="m-text-link" href="#capacidades">Explorar MEDLA <Arrow down /></a></div>
+      </div>
+      <div className="m-hero__art-note"><span>Una misma dirección.</span><small>Empresa / Legal / Tecnología</small></div>
+      {!reducedMotion && <button className="m-motion-control" type="button" aria-pressed={paused} onClick={() => setPaused(value => !value)}><span aria-hidden="true">{paused ? "▷" : "Ⅱ"}</span>{paused ? "Activar movimiento" : "Pausar movimiento"}</button>}
+      <div className="m-hero__bottom"><span>MEDLA ASESORES <i>/</i> MADRID, ES</span><a href="#capacidades">Lo que podemos hacer juntos <Arrow down /></a></div>
+    </div>
+  </section>;
+}
+const CAPABILITIES = [
+  { title: "Decidir con criterio.", discipline: "EMPRESA + LEGAL", text: "Una inversión, un acuerdo entre socios, un contrato importante. Ponemos sobre la mesa los hechos, las opciones y sus implicaciones para que puedas decidir con una visión completa.", result: "Una decisión clara. Un plan para ejecutarla.", links: [["Asesoría legal", "asesoria-legal.html"], ["Sociedades", "constitucion.html"], ["Inversión y financiación", "inversiones.html"]], words: ["Contexto", "Opciones", "Decisión"], color: "gold" },
+  { title: "Conectar la operación.", discipline: "PROCESOS + SISTEMAS", text: "Cuando las herramientas y los equipos dejan de entenderse, el trabajo se atasca. Rediseñamos el recorrido y conectamos datos, tareas y responsables para que cada paso tenga continuidad.", result: "Menos traspasos manuales. Más visibilidad.", links: [["Digitalización", "digitalizacion.html"], ["Automatización", "automatizacion.html"], ["Formularios y datos", "jotform.html"]], words: ["Entrada", "Proceso", "Resultado"], color: "teal" },
+  { title: "Construir lo que sigue.", discipline: "TECNOLOGÍA + CRECIMIENTO", text: "Desarrollamos soluciones que trabajan dentro de tu empresa: agentes de IA, integraciones y sistemas de seguimiento comercial. Conectados a tus herramientas y probados con tu equipo.", result: "Tecnología útil. Control en tus manos.", links: [["Agentes de IA", "agentes.html"], ["Captación y CRM", "redes-sociales.html"], ["Todas las capacidades", "servicios.html"]], words: ["Necesidad", "Desarrollo", "Uso real"], color: "silver" },
+];
+function Capabilities() {
+  const [active, setActive] = useState(1);
+  return <section className="m-capabilities" id="capacidades" aria-labelledby="capabilities-title"><div className="m-wrap">
+    <div className="m-section-top" data-reveal><p className="m-kicker">01 / Lo que hacemos</p><p>El criterio de una consultora.<br />La capacidad de un equipo de desarrollo.</p></div>
+    <h2 className="m-display" id="capabilities-title" data-reveal>Las piezas correctas.<br /><span>Trabajando juntas.</span></h2>
+    <div className="m-capability-list" data-reveal>{CAPABILITIES.map((item, i) => <article className={`m-capability${active === i ? " is-open" : ""}`} key={item.title}>
+      <h3><button type="button" aria-expanded={active === i} aria-controls={`capability-${i}`} id={`capability-button-${i}`} onClick={() => setActive(active === i ? -1 : i)}><small>0{i + 1}</small><span>{item.title}</span><i aria-hidden="true">{active === i ? "−" : "+"}</i></button></h3>
+      <div className="m-capability__body" id={`capability-${i}`} role="region" aria-labelledby={`capability-button-${i}`} hidden={active !== i}>
+        <div className="m-capability__copy"><span className="m-kicker">{item.discipline}</span><p>{item.text}</p><div className="m-capability__links">{item.links.map(([name, href]) => <a key={href} href={href}>{name}<Arrow /></a>)}</div></div>
+        <div className={`m-capability__diagram is-${item.color}`}><div className="m-capability__line" aria-hidden="true"><span /><span /><span /></div><div className="m-capability__words">{item.words.map((word, index) => <span key={word}><small>0{index+1}</small>{word}</span>)}</div><p>{item.result}</p></div>
+      </div>
+    </article>)}</div>
+  </div></section>;
+}
+const EXAMPLES = [
+  { label: "Una factura", href: "automatizacion.html", title: "Del correo al registro.", intro: "La factura llega, se comprueba, se aprueba y se registra. Si algo no cuadra, el flujo pide ayuda a la persona adecuada.", steps: ["Recepción", "Validación", "Aprobación", "Registro"], notes: ["El documento entra una sola vez.", "Los datos se contrastan con el pedido.", "El responsable valida el importe.", "El resultado queda registrado en el sistema."], exception: "Falta el pedido. Compras recibe el caso para revisarlo.", result: "Factura registrada. Documento y aprobación unidos.", review: "Compras", data: "FAC-0248", caption: "Automatización con excepciones previstas" },
+  { label: "Un nuevo cliente", href: "redes-sociales.html", title: "De la consulta a la próxima acción.", intro: "Cada oportunidad entra con contexto, llega a un responsable y tiene un siguiente paso. El equipo puede continuar la conversación sin perder el hilo.", steps: ["Consulta", "Contexto", "Asignación", "Seguimiento"], notes: ["La solicitud llega desde el formulario.", "Se reúne el contexto de la oportunidad.", "Un responsable recibe el caso.", "La próxima acción queda en el CRM."], exception: "Falta el alcance. El equipo comercial solicita contexto.", result: "Oportunidad asignada. Siguiente acción preparada.", review: "Comercial", data: "OP-0086", caption: "Captación conectada al trabajo comercial" },
+  { label: "Una consulta interna", href: "agentes.html", title: "Del documento a una respuesta útil.", intro: "El agente consulta las fuentes permitidas y prepara una respuesta con referencias. Cuando no encuentra una base suficiente, deriva la consulta.", steps: ["Pregunta", "Fuentes", "Revisión", "Respuesta"], notes: ["La pregunta entra con el contexto del usuario.", "Se consultan las fuentes autorizadas.", "Se comprueba que la respuesta tenga soporte.", "La respuesta incluye sus referencias."], exception: "La fuente no es suficiente. Un especialista revisa la consulta.", result: "Respuesta preparada con referencias y registro.", review: "Especialista", data: "IA-0031", caption: "IA con fuentes, permisos y revisión" },
+];
+function StepIcon({ index, done }) {
+  return <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">{done ? <path d="m8 16 5 5 11-11" /> : index === 0 ? <path d="M6 9h20v17H6zM12 6h8M12 14h8M12 19h5" /> : index === 1 ? <path d="m16 4 12 12-12 12L4 16zM12 16l3 3 5-6" /> : index === 2 ? <><circle cx="16" cy="10" r="5"/><path d="M6 27v-3c0-7 20-7 20 0v3" /></> : <path d="M7 5h18v22H7zM11 11h10M11 16h10M11 21h5" />}</svg>;
+}
+function ProcessLab() {
+  const [selected, setSelected] = useState(0), [exception, setException] = useState(false), [step, setStep] = useState(-1), [running, setRunning] = useState(false), [reviewed, setReviewed] = useState(false);
+  const started = useRef(false), labRef = useRef(null);
+  const inView = useInView(labRef), reduced = useReducedMotion();
+  const example = EXAMPLES[selected], finished = step === 4, awaitingReview = exception && step === 2 && !reviewed;
   useEffect(() => {
-    if (reducedMotion || !running) return undefined;
-    const timer = window.setTimeout(() => {
-      if (active >= last - 1) {
-        setActive(last);
-        setRunning(false);
-      } else setActive((value) => value + 1);
-    }, 1550);
+    if (inView && !started.current && !reduced) { started.current = true; setStep(0); setRunning(true); }
+  }, [inView, reduced]);
+  useEffect(() => {
+    if (!running || !inView || reduced || awaitingReview) return undefined;
+    const timer = window.setTimeout(() => { setStep(current => Math.min(current + 1, 4)); if (step >= 3) setRunning(false); }, step === 2 && exception ? 2300 : 1600);
     return () => window.clearTimeout(timer);
-  }, [active, last, running, reducedMotion]);
-
-  const select = (index) => { setActive(index); setRunning(false); };
-  const toggle = () => {
-    if (reducedMotion) {
-      setActive((value) => value >= last ? 0 : value + 1);
-      setRunning(false);
-      return;
-    }
-    if (running) {
-      setRunning(false);
-      return;
-    }
-    if (active >= last) setActive(0);
+  }, [running, inView, reduced, step, exception, awaitingReview]);
+  useEffect(() => { if (reduced) setRunning(false); }, [reduced]);
+  const reset = () => { started.current = true; setStep(-1); setRunning(false); setReviewed(false); };
+  const play = () => {
+    started.current = true;
+    if (awaitingReview) { setReviewed(true); setStep(3); setRunning(!reduced); return; }
+    if (reduced) { if (finished) setReviewed(false); setStep(value => value >= 4 ? 0 : value + 1); return; }
+    if (running) { setRunning(false); return; }
+    if (step < 0 || finished) { setStep(0); setReviewed(false); }
     setRunning(true);
   };
-  const controlLabel = reducedMotion
-    ? active >= last ? "VOLVER AL INICIO" : "SIGUIENTE FASE"
-    : running ? "PAUSAR" : active >= last ? "REPETIR" : "CONTINUAR";
-
-  return (
-    <section className="ex-console" aria-label="Demostración del recorrido de un proyecto MEDLA">
-      <header className="ex-console__head">
-        <div><b>M/</b><span>CONTROL DE PROYECTO</span></div>
-        <button type="button" onClick={toggle}><i className={running ? "is-live" : ""} />{controlLabel}</button>
-      </header>
-      <div className="ex-console__brief">
-        <span>ESCENARIO ILUSTRATIVO / 01</span>
-        <h2>Implantar un nuevo proceso de alta de proveedores.</h2>
-        <p>Legal, operaciones y sistemas trabajan sobre una misma decisión.</p>
+  const buttonLabel = awaitingReview ? "Validar y continuar" : reduced ? finished ? "Volver a empezar" : "Ver siguiente paso" : running ? "Pausar recorrido" : finished ? "Repetir recorrido" : step < 0 ? "Poner en marcha" : "Continuar recorrido";
+  const message = step < 0 ? "Elige un caso y pon el recorrido en marcha." : finished ? example.result : exception && step === 2 ? example.exception : example.notes[step];
+  return <section className="m-lab" id="como-funciona" ref={labRef} aria-labelledby="lab-title"><div className="m-wrap">
+    <div className="m-section-top" data-reveal><p className="m-kicker">02 / De la idea a la operación</p><span className="m-lab__tag"><i />Demostración interactiva</span></div>
+    <div className="m-lab__intro" data-reveal><h2 className="m-display" id="lab-title">Se entiende mejor<br /><span>cuando lo ves funcionar.</span></h2><p>Prueba un recorrido. Cambia el caso.<br />Mira qué ocurre cuando falta información.</p></div>
+    <div className="m-lab__cases" aria-label="Elige el proceso de demostración">{EXAMPLES.map((item, index) => <button key={item.label} type="button" aria-pressed={selected === index} onClick={() => { setSelected(index); reset(); }}><small>0{index+1}</small>{item.label}<Arrow /></button>)}</div>
+    <div className="m-lab__stage">
+      <div className="m-lab__story"><span className="m-kicker">{example.data} / EJEMPLO ILUSTRATIVO</span><h3>{example.title}</h3><p>{example.intro}</p><a className="m-text-link" href={example.href}>Ver cómo lo desarrollamos <Arrow /></a></div>
+      <div className={`m-flow${running && inView && !reduced && !awaitingReview ? " is-running" : ""}${exception ? " has-exception" : ""}`} style={{ "--flow-step": Math.max(0, step) }}>
+        <div className="m-flow__rail" aria-hidden="true"><i /></div>
+        <div className="m-flow__nodes">{example.steps.map((label, index) => <div key={label} className={`m-flow__node${step === index ? " is-current" : ""}${step > index ? " is-done" : ""}`}><span className="m-flow__number">0{index+1}</span><div className="m-flow__icon"><StepIcon index={index} done={step > index} /></div><strong>{label}</strong><small>{step > index ? "Completado" : step === index ? exception && index === 2 ? "Revisión humana" : "En curso" : "En espera"}</small></div>)}</div>
+        <div className={`m-flow__review${exception && step >= 2 ? " is-active" : ""}`}><span className="m-flow__branch" aria-hidden="true"/><span><i />{example.review}</span><small>{exception ? "La excepción tiene responsable" : "Intervención si hace falta"}</small></div>
       </div>
-      <div className="ex-console__body">
-        <div className="ex-console__inputs" aria-label="Información de entrada">
-          <span>ENTRADAS</span>
-          {["Riesgo contractual", "Proceso actual", "Datos y permisos"].map((item, index) => <div className={active >= index ? "is-ready" : ""} key={item}><i /><b>{item}</b></div>)}
-        </div>
-        <div className="ex-console__flow">
-          <div className="ex-console__rail" aria-hidden="true"><i style={{ "--progress": `${active / (MANDATE_STAGES.length - 1)}` }} /></div>
-          <div className="ex-console__steps" role="tablist" aria-label="Fases del proyecto">
-            {MANDATE_STAGES.map((item, index) => (
-              <button key={item.code} type="button" role="tab" id={`mandate-tab-${item.code}`} aria-selected={active === index} aria-controls="mandate-stage" tabIndex={active === index ? 0 : -1} className={`${active === index ? "is-active" : ""}${active > index ? " is-done" : ""}`} onClick={() => select(index)} onKeyDown={(event) => {
-                if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
-                event.preventDefault();
-                const next = event.key === "Home" ? 0 : event.key === "End" ? MANDATE_STAGES.length - 1 : (index + (event.key === "ArrowRight" ? 1 : -1) + MANDATE_STAGES.length) % MANDATE_STAGES.length;
-                select(next);
-                event.currentTarget.parentElement.querySelectorAll("button")[next]?.focus();
-              }}><span>{item.code}</span><b>{item.label}</b></button>
-            ))}
-          </div>
-        </div>
-        <article id="mandate-stage" className="ex-console__result" role="tabpanel" aria-labelledby={`mandate-tab-${stage.code}`} key={stage.code}>
-          <span>SALIDA / {stage.code}</span><h3>{stage.title}</h3><p>{stage.detail}</p><div><i />{stage.output}</div>
-        </article>
-      </div>
-      <footer><span>Demostración conceptual · no utiliza datos de clientes</span><span>Encaje → mandato → implantación → transferencia</span></footer>
-    </section>
-  );
-}
-
-function Hero() {
-  return (
-    <header className="ex-hero">
-      <div className="ex-hero__contours" aria-hidden="true"><i /><i /><i /></div>
-      <div className="ex-shell ex-hero__layout">
-        <div className="ex-hero__copy">
-          <div className="ex-eyebrow"><span>Dirección de proyectos transversales</span><small>Madrid · España</small></div>
-          <h1>Una sola dirección para decisiones que cruzan <em>negocio, legal y tecnología.</em></h1>
-          <p>MEDLA aclara la decisión, coordina a los especialistas e implanta la solución. El proyecto termina con responsables, documentación y control dentro de tu empresa.</p>
-          <div className="ex-actions">
-            <a className="ex-button ex-button--gold" href="contacto.html?context=proyecto">Plantear un proyecto <Arrow /></a>
-            <a className="ex-text-link" href="#como-funciona">Ver cómo funciona <Arrow /></a>
-          </div>
-          <div className="ex-hero__assurance" aria-label="Compromisos principales"><span>Un responsable</span><i /><span>Un alcance aprobado</span><i /><span>Control transferido</span></div>
-        </div>
-        <div className="ex-hero__visual"><MandateConsole /></div>
-      </div>
-      <a className="ex-scroll-cue" href="#encaje"><span>Explorar</span><i /></a>
-    </header>
-  );
-}
-
-function Situations() {
-  return (
-    <section className="ex-situations" id="encaje" aria-labelledby="situations-title">
-      <div className="ex-shell">
-        <div className="ex-section-head" data-reveal>
-          <span>01 / CUÁNDO INTERVENIMOS</span>
-          <h2 id="situations-title">MEDLA interviene cuando <em>una sola disciplina ya no basta.</em></h2>
-          <p>Asumimos la dirección cuando el resultado depende de varias capacidades y de una implantación coordinada.</p>
-        </div>
-        <div className="ex-situation-list">
-          {PROJECT_SITUATIONS.map((item) => (
-            <article key={item.number} data-reveal>
-              <div className="ex-situation-list__number"><span>{item.number}</span><small>{item.type}</small></div>
-              <div className="ex-situation-list__copy"><h3>{item.title}</h3><p>{item.text}</p></div>
-              <ul>{item.outputs.map((output) => <li key={output}><i />{output}</li>)}</ul>
-              <a href={item.href} aria-label={`Ver una capacidad relacionada con ${item.type}`}>Ver capacidad <Arrow diagonal /></a>
-            </article>
-          ))}
-        </div>
-        <div className="ex-situations__foot" data-reveal><p>¿Tu situación cruza varios de estos escenarios?</p><a href="servicios.html">Orientar el proyecto por situación <Arrow /></a></div>
-      </div>
-    </section>
-  );
-}
-
-function DeliveryDossier() {
-  const [active, setActive] = useState(0);
-  const chapter = DOSSIER_CHAPTERS[active];
-  const refs = useRef([]);
-  const selectByKeyboard = (event, index) => {
-    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
-    event.preventDefault();
-    const next = event.key === "Home" ? 0 : event.key === "End" ? DOSSIER_CHAPTERS.length - 1 : (index + (event.key === "ArrowRight" ? 1 : -1) + DOSSIER_CHAPTERS.length) % DOSSIER_CHAPTERS.length;
-    setActive(next);
-    refs.current[next]?.focus();
-  };
-  return (
-    <div className="ex-dossier" data-reveal>
-      <header className="ex-dossier__head"><div><i /><span>EJEMPLO DE ENTREGA</span><b>Alta de proveedor internacional</b></div><span>ESCENARIO ILUSTRATIVO</span></header>
-      <div className="ex-dossier__layout">
-        <aside className="ex-dossier__before">
-          <header><span>ANTES</span><h3>Información dispersa y una decisión detenida.</h3></header>
-          <ol>
-            <li><span>Correo</span><b>¿Quién valida las condiciones?</b><small>Sin responsable</small></li>
-            <li><span>Documento</span><b>Contrato_proveedor_v7.pdf</b><small>Versión por confirmar</small></li>
-            <li><span>ERP</span><b>Alta bloqueada</b><small>Falta certificado fiscal</small></li>
-          </ol>
-          <div><i />Contexto incompleto</div>
-        </aside>
-        <div className="ex-dossier__transformation" aria-hidden="true"><span>MEDLA</span><i /><small>Reunir · decidir · implantar</small></div>
-        <article className="ex-dossier__document">
-          <header><div><span>EXPEDIENTE DE ENTREGA</span><b>Folio 06 · versión 1.4</b></div><strong><i /> VALIDADO</strong></header>
-          <div className="ex-dossier__tabs" role="tablist" aria-label="Contenido de la entrega">
-            {DOSSIER_CHAPTERS.map((item, index) => <button key={item.id} ref={(node) => { refs.current[index] = node; }} type="button" role="tab" id={`dossier-tab-${item.id}`} aria-controls="dossier-panel" aria-selected={active === index} tabIndex={active === index ? 0 : -1} onClick={() => setActive(index)} onKeyDown={(event) => selectByKeyboard(event, index)}><span>{item.number}</span>{item.label}<i /></button>)}
-          </div>
-          <div id="dossier-panel" className="ex-dossier__panel" role="tabpanel" aria-labelledby={`dossier-tab-${chapter.id}`} key={chapter.id}>
-            <span>{chapter.number} / {chapter.label}</span><h3>{chapter.title}</h3><p>{chapter.text}</p>
-            <dl>{chapter.facts.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
-          </div>
-          <footer><span><i />Decisión registrada</span><span><i />Sistema probado</span><span><i />Control transferido</span></footer>
-        </article>
-      </div>
+      <div className="m-lab__readout" role="status" aria-live="polite"><span className={finished ? "is-finished" : ""}>{finished ? "✓" : step < 0 ? "—" : `0${step+1}`}</span><p>{message}</p></div>
+      <div className="m-lab__controls"><button className="m-button" type="button" onClick={play}><span aria-hidden="true">{awaitingReview ? "✓" : running && !reduced ? "Ⅱ" : "▷"}</span>{buttonLabel}</button><button className="m-exception-switch" type="button" role="switch" aria-checked={exception} onClick={() => { setException(value => !value); reset(); }}><span className="m-switch" aria-hidden="true"><i /></span>Probar con información incompleta</button></div>
     </div>
-  );
+    <div className="m-lab__foot"><span>{example.caption}</span><span>Simulación explicativa. No utiliza datos de clientes.</span></div>
+  </div></section>;
 }
-
-function Delivery() {
-  return (
-    <section className="ex-delivery" id="como-funciona" aria-labelledby="delivery-title">
-      <div className="ex-shell">
-        <div className="ex-section-head ex-section-head--dark" data-reveal>
-          <span>02 / QUÉ CAMBIA</span>
-          <h2 id="delivery-title">El encargo no termina en una recomendación. <em>Termina con una solución operativa.</em></h2>
-          <p>Esta demostración enseña cómo una decisión dispersa se convierte en un expediente que el equipo puede ejecutar, revisar y mantener.</p>
-        </div>
-        <DeliveryDossier />
-      </div>
-    </section>
-  );
+function WorkingTogether() {
+  return <section className="m-method" id="metodo" aria-labelledby="method-title"><div className="m-wrap m-method__layout">
+    <div className="m-method__copy" data-reveal><p className="m-kicker">03 / De principio a fin</p><h2 className="m-display" id="method-title">Nos implicamos.<br /><span>Hasta la entrega.</span></h2><p>Trabajamos contigo para entender qué necesitas, construir la solución y dejarla en manos de tu equipo.</p><a className="m-text-link" href="nosotros.html">Conoce nuestra forma de trabajar <Arrow /></a></div>
+    <ol className="m-method__steps" data-reveal>{[
+      ["Entender antes de proponer.", "Escuchamos al equipo y revisamos el punto de partida. Acordamos qué hay que resolver, qué queda fuera y cómo sabremos que está resuelto."],
+      ["Construir contigo.", "Trabajamos por entregas que puedes revisar. Las decisiones importantes, los responsables y los cambios quedan claros durante el proyecto."],
+      ["Dejarlo en tus manos.", "Entregamos la solución junto con su documentación y criterios de uso. Definimos quién la mantiene y qué seguimiento necesita."],
+    ].map(([title,text],index) => <li key={title}><span>0{index+1}</span><div><h3>{title}</h3><p>{text}</p></div></li>)}</ol>
+  </div></section>;
 }
-
-function MandateDefinition() {
-  return (
-    <section className="ex-mandate" aria-labelledby="mandate-title">
-      <div className="ex-shell ex-mandate__layout">
-        <div className="ex-mandate__intro" data-reveal>
-          <span>03 / PRIMERA FASE</span>
-          <h2 id="mandate-title">Antes de movilizar especialistas, <em>cerramos el mandato.</em></h2>
-          <p><strong>Mandato de dirección:</strong> objetivo, alcance, autoridad, responsables y criterio de cierre acordados con el cliente.</p>
-          <a className="ex-button ex-button--ink" href="contacto.html?context=proyecto">Plantear un proyecto <Arrow /></a>
-        </div>
-        <div className="ex-mandate__protocol" data-reveal>
-          <header><span>RECORRIDO DEL PROYECTO</span><small>4 cierres verificables</small></header>
-          <ol>{MANDATE_STAGES.map((stage, index) => <li key={stage.code}>
-            <span>{stage.code}</span><div><small>{stage.label}</small><h3>{stage.title}</h3><p>{stage.detail}</p></div><strong><i />{stage.output}</strong>{index < MANDATE_STAGES.length - 1 && <b aria-hidden="true" />}
-          </li>)}</ol>
-          <footer>La propuesta confirma calendario, equipo, precio, entregables y criterios de aceptación antes de empezar.</footer>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Accountability() {
-  const commitments = [
-    ["Dirección identificada", "La propuesta identifica la dirección del proyecto, las funciones asignadas y la autoridad de cada frente."],
-    ["Alcance gobernable", "Cada entrega tiene responsable, versión, criterio de aceptación y cambio pendiente."],
-    ["Control del cliente", "Permisos, documentación y conocimiento se transfieren al equipo; la solución no depende de una caja negra."],
-  ];
-  return (
-    <section className="ex-accountability" aria-labelledby="accountability-title">
-      <div className="ex-shell ex-accountability__layout">
-        <div className="ex-accountability__identity" data-reveal>
-          <span>04 / RESPONSABILIDAD</span><h2 id="accountability-title">La entidad responsable <em>está identificada.</em></h2>
-          <dl>
-            <div><dt>Razón social</dt><dd>MEDLA ASESORES, S.L.</dd></div>
-            <div><dt>Sede</dt><dd>Móstoles · Madrid · España</dd></div>
-            <div><dt>Registro Mercantil</dt><dd>Tomo 46169 · Folio 20 · Hoja M-811076</dd></div>
-            <div><dt>Contacto</dt><dd><a href="mailto:info@medla-empresas.com">info@medla-empresas.com</a></dd></div>
-          </dl>
-          <a href="privacidad.html#responsable">Ver información legal <Arrow diagonal /></a>
-        </div>
-        <div className="ex-accountability__commitments">{commitments.map(([title, text], index) => <article key={title} data-reveal><span>0{index + 1}</span><div><h3>{title}</h3><p>{text}</p></div></article>)}</div>
-      </div>
-    </section>
-  );
-}
-
 function App() {
-  return <><RevealController /><window.MedlaSiteHeader current="home" /><main id="contenido"><Hero /><Situations /><Delivery /><MandateDefinition /><Accountability /></main><window.MedlaSiteFooter current="home" /></>;
+  return <><RevealController /><window.MedlaSiteHeader current="home" /><main id="contenido"><Hero /><Capabilities /><ProcessLab /><WorkingTogether /></main><window.MedlaSiteFooter current="home" /></>;
 }
-
 ReactDOM.createRoot(document.getElementById("root")).render(<App />);

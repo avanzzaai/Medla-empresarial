@@ -2,9 +2,9 @@
 const { useEffect, useRef, useState } = React;
 
 const MEDLA_NAV = [
-  { id: "services", label: "Qué resolvemos", href: "servicios.html" },
-  { id: "about", label: "Cómo trabajamos", href: "nosotros.html" },
-  { id: "insights", label: "Notas", href: "blog.html" },
+  { id: "services", label: "Qué hacemos", href: "servicios.html" },
+  { id: "about", label: "MEDLA", href: "nosotros.html" },
+  { id: "insights", label: "Ideas", href: "blog.html" },
 ];
 
 const MEDLA_MAP = [
@@ -164,9 +164,9 @@ function MedlaSiteHeader({ current = "", context = "", ctaHref = "" }) {
         </nav>
 
         <div className="medla-site-actions">
-          <a className="medla-site-cta" href={resolvedCta} aria-current={current === "contact" ? "page" : undefined}>Plantear un proyecto <ShellArrow /></a>
+          <a className="medla-site-cta" href={resolvedCta} aria-current={current === "contact" ? "page" : undefined}>Hablemos <ShellArrow /></a>
           <button ref={triggerRef} className="medla-site-map-trigger" type="button" aria-label={open ? "Cerrar mapa del sitio" : "Abrir mapa del sitio"} aria-expanded={open} aria-controls="medla-site-map" onClick={() => setOpen(true)}>
-            <span>Mapa</span><ShellMenuIcon />
+            <span>Menú</span><ShellMenuIcon />
           </button>
         </div>
       </div>
@@ -177,15 +177,15 @@ function MedlaSiteHeader({ current = "", context = "", ctaHref = "" }) {
       <div className="medla-site-map__panel" ref={panelRef}>
         <header className="medla-site-map__head">
           <a className="medla-site-brand" href="index.html" onClick={close} aria-label="MEDLA Empresas, inicio"><img src="logo.png" alt="" /><span>Consultoría<br />empresarial</span></a>
-          <div><span>MAPA / 04 PUNTOS DE ENTRADA</span><button type="button" onClick={close}>Cerrar <ShellMenuIcon close /></button></div>
+          <div><span>EXPLORA MEDLA</span><button type="button" onClick={close}>Cerrar <ShellMenuIcon close /></button></div>
         </header>
 
         <div className="medla-site-map__body">
           <section className="medla-site-map__intro">
-            <p>Qué necesitas resolver</p>
-            <h2>Empieza por el proyecto.<br /><em>No por el servicio.</em></h2>
-            <span>Elige la situación más próxima. Activaremos únicamente las capacidades que el mandato exija, bajo un responsable y un plan común.</span>
-            <a href={resolvedCta} onClick={close}>Plantear un proyecto <ShellArrow /></a>
+            <p>Negocio. Derecho. Tecnología.</p>
+            <h2>Tu próximo proyecto,<br /><em>por aquí.</em></h2>
+            <span>Cuéntanos qué quieres cambiar en tu empresa. Empezamos por entenderlo.</span>
+            <a href={resolvedCta} onClick={close}>Hablemos <ShellArrow /></a>
           </section>
 
           <nav className="medla-site-map__routes" aria-label="Áreas y páginas de MEDLA">
@@ -210,18 +210,18 @@ function MedlaSiteFooter({ current = "", context = "" }) {
       ? `contacto.html?context=${encodeURIComponent(context)}`
       : "contacto.html?path=diagnostico";
 
-  return <footer className={`medla-site-footer${current === "home" ? " is-home-compact" : ""}`}>
+  return <footer className="medla-site-footer">
     <div className="medla-site-footer__shell">
       <div className="medla-site-footer__opening">
+        <div className="medla-site-footer__conversation">
+          <span>Hablemos de tu empresa</span>
+          <h2>Lo siguiente empieza<br /> con <em>una conversación.</em></h2>
+          <p>Cuéntanos dónde estás y qué necesitas resolver.</p>
+          <a href={ctaHref}>Empezar una conversación <ShellArrow /></a>
+        </div>
         <div className="medla-site-footer__identity">
           <a href="index.html" aria-label="MEDLA Empresas, inicio"><img src="logo.png" alt="" /></a>
-          <p>Dirección e implantación para proyectos donde la decisión depende de negocio, criterio jurídico y tecnología.</p>
-        </div>
-        <div className="medla-site-footer__conversation">
-          <span>Revisión de encaje</span>
-          <h2>Valoremos quién debe dirigir <em>el proyecto.</em></h2>
-          <p>Describe la decisión, las áreas implicadas y qué debería quedar funcionando. Confirmaremos si encaja, qué información falta y qué reunión conviene convocar.</p>
-          <a href={ctaHref}>Plantear un proyecto <ShellArrow /></a>
+          <p>Consultoría empresarial.<br />De la primera decisión<br />a la puesta en marcha.</p>
         </div>
       </div>
 
@@ -231,12 +231,6 @@ function MedlaSiteFooter({ current = "", context = "" }) {
           <div>{group.links.map(([label, href]) => <a key={href} href={href}>{label}<ShellArrow /></a>)}</div>
         </section>)}
       </nav>
-
-      <div className="medla-site-footer__flow" aria-label="Método MEDLA: encaje, mandato, implantación y transferencia">
-        {["Encaje", "Mandato", "Implantación", "Transferencia"].map((label, index) => <React.Fragment key={label}>
-          <span><i />{label}</span>{index < 3 && <b />}
-        </React.Fragment>)}
-      </div>
 
       <div className="medla-site-footer__base">
         <span>© {new Date().getFullYear()} MEDLA ASESORES, S.L.</span>

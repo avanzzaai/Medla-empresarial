@@ -35,10 +35,10 @@ function CtHero({ context }) {
     <section className="contacto-hero">
       <div className="container contacto-hero-inner">
         <div className="contacto-hero-copy">
-          <span className="eyebrow">01 — Revisión de encaje</span>
-          <h1>Describe la decisión, el plazo <em>y las áreas implicadas.</em></h1>
+          <span className="eyebrow">01 — Hablemos</span>
+          <h1>Cuéntanos qué <em>quieres resolver.</em></h1>
           <p className="lead">
-            Revisaremos el contexto para confirmar si MEDLA debe asumir la dirección, qué información falta y qué reunión conviene convocar.
+            Qué está pasando, quién interviene y cuándo necesitas avanzar. Con ese punto de partida podremos decirte cómo ayudarte.
           </p>
           <div className="contacto-pulse">
             <span className="dot"></span> Revisión del contexto del proyecto

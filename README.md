@@ -22,7 +22,7 @@ No edites directamente los bundles generados; cambia su fuente y ejecuta `pnpm r
 
 | Fuente | Salida publicada |
 | --- | --- |
-| `app.jsx` | `app.js` |
+| `app.jsx`, `components/medla-aperture.jsx` | `app.js` |
 | `contacto.jsx` | `contacto.js` |
 | `servicios-entry.jsx`, `services.jsx` y componentes importados | `servicios.js` |
 | `nosotros.jsx` | `nosotros.js` |

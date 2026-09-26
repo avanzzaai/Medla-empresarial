@@ -150,9 +150,9 @@ function Hero() {
   return <header className="how-hero">
     <div className="how-shell how-hero__layout">
       <div className="how-hero__copy">
-        <div className="how-overline"><span>Cómo trabajamos</span><small>Gobierno · ejecución · transferencia</small></div>
-        <h1>Así se dirige un proyecto MEDLA: <em>con alcance, responsables y decisiones visibles.</em></h1>
-        <p>Un mandato común, una persona responsable de coordinarlo y un sistema de trabajo que permite a dirección saber qué está decidido, qué falta y quién debe actuar.</p>
+        <div className="how-overline"><span>Cómo trabajamos</span><small>Un equipo contigo</small></div>
+        <h1>De la primera conversación <em>a la puesta en marcha.</em></h1>
+        <p>Sabes qué estamos construyendo, quién se ocupa y qué falta por decidir. Acordamos el alcance al principio y revisamos contigo cada entrega.</p>
         <div className="how-actions"><a className="how-button how-button--gold" href="contacto.html?context=proyecto">Plantear un proyecto <Arrow /></a><a className="how-text-link" href="#gobierno">Ver el gobierno del encargo <Arrow /></a></div>
       </div>
       <GovernanceBoard />
@@ -171,7 +171,7 @@ function MandateAnatomy() {
   ];
   return <section className="how-anatomy" id="gobierno" aria-labelledby="anatomy-title">
     <div className="how-shell">
-      <div className="how-section-head" data-how-reveal><span>01 / ANTES DE EMPEZAR</span><h2 id="anatomy-title">El mandato convierte una necesidad abierta <em>en un encargo gobernable.</em></h2><p>Estas seis definiciones aparecen en la propuesta y se confirman antes de iniciar la implantación.</p></div>
+      <div className="how-section-head" data-how-reveal><span>01 / ANTES DE EMPEZAR</span><h2 id="anatomy-title">Lo importante, <em>acordado desde el principio.</em></h2><p>Estas seis definiciones aparecen en la propuesta y se confirman antes de iniciar el trabajo.</p></div>
       <div className="how-anatomy__list">{fields.map(([number,title,text]) => <article key={number} data-how-reveal><span>{number}</span><h3>{title}</h3><p>{text}</p></article>)}</div>
       <aside data-how-reveal><span>DEFINICIÓN</span><p><strong>Mandato de dirección:</strong> objetivo, alcance, autoridad, responsables y criterio de cierre acordados con el cliente.</p></aside>
     </div>

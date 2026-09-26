@@ -191,9 +191,9 @@ function Hero() {
   return <header className="svc-hero">
     <div className="svc-shell svc-hero__layout">
       <div className="svc-hero__copy">
-        <div className="svc-overline"><span>Capacidades activadas según el mandato</span><small>04 rutas</small></div>
-        <h1>Empieza por el proyecto. <em>No por una lista de servicios.</em></h1>
-        <p>Combinamos criterio jurídico, diseño operativo y desarrollo tecnológico bajo un responsable de proyecto, desde la decisión hasta la transferencia.</p>
+        <div className="svc-overline"><span>Qué podemos hacer por tu empresa</span><small>04 áreas</small></div>
+        <h1>Las capacidades que <em>necesita tu proyecto.</em></h1>
+        <p>Derecho, operaciones y tecnología trabajan sobre el mismo problema. Reunimos las capacidades necesarias y te acompañamos hasta la entrega.</p>
         <div className="svc-actions"><a className="svc-button svc-button--gold" href="#orientador">Orientar el proyecto <Arrow /></a><a className="svc-text-link" href="contacto.html?context=proyecto">Plantear un proyecto <Arrow /></a></div>
       </div>
       <CapabilityMap />

@@ -2,7 +2,7 @@ import { build } from "esbuild";
 
 const javascript = [
   { entryPoints: ["site-shell.jsx"], outfile: "site-shell.js" },
-  { entryPoints: ["app.jsx"], outfile: "app.js" },
+  { entryPoints: ["app.jsx"], outfile: "app.js", bundle: true },
   { entryPoints: ["contacto.jsx"], outfile: "contacto.js" },
   { entryPoints: ["servicios-entry.jsx"], outfile: "servicios.js", bundle: true },
   { entryPoints: ["nosotros.jsx"], outfile: "nosotros.js" },
