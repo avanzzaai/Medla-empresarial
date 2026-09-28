@@ -2,7 +2,7 @@
 const { useEffect, useRef, useState } = React;
 
 const MEDLA_NAV = [
-  { id: "services", label: "Qué hacemos", href: "servicios.html" },
+  { id: "services", label: "Servicios", href: "servicios.html" },
   { id: "about", label: "MEDLA", href: "nosotros.html" },
   { id: "insights", label: "Ideas", href: "blog.html" },
 ];
@@ -10,31 +10,32 @@ const MEDLA_NAV = [
 const MEDLA_MAP = [
   {
     number: "01",
-    title: "Operaciones y sistemas",
-    text: "Procesos, datos y herramientas reunidos en una operación visible y mantenible.",
+    title: "Tecnología y operaciones",
+    text: "ERP, automatizaciones, inteligencia artificial y formularios conectados al trabajo de tu empresa.",
     links: [
-      ["Digitalización", "digitalizacion.html"],
-      ["Automatización", "automatizacion.html"],
+      ["ERP y digitalización", "digitalizacion.html"],
+      ["Automatizaciones", "automatizacion.html"],
       ["Agentes de IA", "agentes.html"],
-      ["Formularios y datos", "jotform.html"],
+      ["Jotform y formularios", "jotform.html"],
     ],
   },
   {
     number: "02",
-    title: "Decisión y estructura",
-    text: "Contratos, gobierno y escenarios preparados para que dirección pueda comparar y aprobar.",
+    title: "Fiscal, legal y empresa",
+    text: "Fiscalidad, contratos, establecimiento de empresas y decisiones de inversión.",
     links: [
+      ["Auditoría y asesoría fiscal", "asesoria-fiscal.html"],
       ["Asesoría legal", "asesoria-legal.html"],
-      ["Constitución de sociedades", "constitucion.html"],
+      ["Establecimiento de empresas", "constitucion.html"],
       ["Inversión y financiación", "inversiones.html"],
     ],
   },
   {
     number: "03",
-    title: "Crecimiento y CRM",
-    text: "Posicionamiento, captación y seguimiento conectados a una próxima acción comercial.",
+    title: "Desarrollo comercial",
+    text: "Organiza la captación, las oportunidades y el seguimiento de clientes con un CRM adaptado a tu equipo.",
     links: [
-      ["Posicionamiento, captación y CRM", "redes-sociales.html"],
+      ["CRM y desarrollo comercial", "redes-sociales.html"],
       ["Mapa de servicios", "servicios.html"],
       ["Plantear un proyecto", "contacto.html?path=diagnostico"],
     ],
@@ -53,26 +54,27 @@ const MEDLA_MAP = [
 
 const MEDLA_FOOTER_GROUPS = [
   {
-    title: "Operaciones y sistemas",
+    title: "Tecnología y ventas",
     links: [
-      ["Digitalización", "digitalizacion.html"],
-      ["Automatización", "automatizacion.html"],
+      ["CRM y desarrollo comercial", "redes-sociales.html"],
+      ["ERP y digitalización", "digitalizacion.html"],
+      ["Automatizaciones", "automatizacion.html"],
       ["Agentes de IA", "agentes.html"],
-      ["Formularios y datos", "jotform.html"],
+      ["Jotform y formularios", "jotform.html"],
     ],
   },
   {
-    title: "Decisión y estructura",
+    title: "Fiscal, legal y empresa",
     links: [
+      ["Auditoría y asesoría fiscal", "asesoria-fiscal.html"],
       ["Asesoría legal", "asesoria-legal.html"],
-      ["Constitución de sociedades", "constitucion.html"],
+      ["Establecimiento de empresas", "constitucion.html"],
       ["Inversión y financiación", "inversiones.html"],
     ],
   },
   {
     title: "MEDLA",
     links: [
-      ["Posicionamiento, captación y CRM", "redes-sociales.html"],
       ["Cómo trabajamos", "nosotros.html"],
       ["Notas de decisión", "blog.html"],
       ["Plantear un proyecto", "contacto.html?path=diagnostico"],
@@ -197,7 +199,7 @@ function MedlaSiteHeader({ current = "", context = "", ctaHref = "" }) {
           </nav>
         </div>
 
-        <footer className="medla-site-map__foot"><span>Madrid · España</span><a href="mailto:info@medla-empresas.com">info@medla-empresas.com</a><span>Legal · Operaciones · Tecnología · Crecimiento</span></footer>
+        <footer className="medla-site-map__foot"><span>Madrid · España</span><a href="mailto:info@medla-empresas.com">info@medla-empresas.com</a><span>Fiscal · Legal · Tecnología · Comercial</span></footer>
       </div>
     </div>
   </>;

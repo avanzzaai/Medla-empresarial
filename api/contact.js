@@ -24,6 +24,10 @@ const ALLOWED_SCOPES = new Set([
   "Automatización e integración",
   "IA aplicada",
   "Posicionamiento, captación y CRM",
+  "CRM y desarrollo comercial",
+  "ERP y digitalización",
+  "Auditoría y asesoría fiscal",
+  "Jotform y formularios",
   "Aún no lo tengo claro",
 ]);
 const ALLOWED_BUDGETS = new Set(["A definir", "Hasta 10K", "10K – 25K", "25K – 50K", "50K – 100K", "100K+"]);
@@ -97,7 +101,7 @@ module.exports = async function contactHandler(request, response) {
   const origenNota = text(body.origen_nota, 180);
   const paginaOrigen = text(body.pagina_origen, 500);
   const alcance = Array.isArray(body.alcance)
-    ? [...new Set(body.alcance.map((item) => text(item, 100)).filter((item) => ALLOWED_SCOPES.has(item)))].slice(0, 8)
+    ? [...new Set(body.alcance.map((item) => text(item, 100)).filter((item) => ALLOWED_SCOPES.has(item)))].slice(0, ALLOWED_SCOPES.size)
     : [];
 
   const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);

@@ -40,21 +40,21 @@ function Hero() {
         <p className="m-hero__lead">Hay decisiones que cambian una empresa.<br />Te ayudamos a tomarlas. Y a hacerlas realidad.</p>
         <div className="m-actions"><a className="m-button" href="contacto.html?context=proyecto">Hablemos de tu proyecto <Arrow /></a><a className="m-text-link" href="#capacidades">Explorar MEDLA <Arrow down /></a></div>
       </div>
-      <div className="m-hero__art-note"><span>Criterio. Diseño. Ejecución.</span><small>Empresa / Legal / Tecnología</small></div>
+      <div className="m-hero__art-note"><span>Conectamos las piezas de tu empresa.</span><small>Personas / Datos / Sistemas</small></div>
       <div className="m-hero__bottom"><span>MEDLA ASESORES <i>/</i> MADRID, ES</span><a href="#capacidades">Lo que podemos hacer juntos <Arrow down /></a></div>
     </div>
   </section>;
 }
 const CAPABILITIES = [
-  { title: "Decidir con criterio.", discipline: "EMPRESA + LEGAL", text: "Una inversión, un acuerdo entre socios, un contrato importante. Ponemos sobre la mesa los hechos, las opciones y sus implicaciones para que puedas decidir con una visión completa.", result: "Una decisión clara. Un plan para ejecutarla.", links: [["Asesoría legal", "asesoria-legal.html"], ["Sociedades", "constitucion.html"], ["Inversión y financiación", "inversiones.html"]], words: ["Contexto", "Opciones", "Decisión"], color: "gold" },
-  { title: "Conectar la operación.", discipline: "PROCESOS + SISTEMAS", text: "Cuando las herramientas y los equipos dejan de entenderse, el trabajo se atasca. Rediseñamos el recorrido y conectamos datos, tareas y responsables para que cada paso tenga continuidad.", result: "Menos traspasos manuales. Más visibilidad.", links: [["Digitalización", "digitalizacion.html"], ["Automatización", "automatizacion.html"], ["Formularios y datos", "jotform.html"]], words: ["Entrada", "Proceso", "Resultado"], color: "teal" },
-  { title: "Construir lo que sigue.", discipline: "TECNOLOGÍA + CRECIMIENTO", text: "Desarrollamos soluciones que trabajan dentro de tu empresa: agentes de IA, integraciones y sistemas de seguimiento comercial. Conectados a tus herramientas y probados con tu equipo.", result: "Tecnología útil. Control en tus manos.", links: [["Agentes de IA", "agentes.html"], ["Captación y CRM", "redes-sociales.html"], ["Todas las capacidades", "servicios.html"]], words: ["Necesidad", "Desarrollo", "Uso real"], color: "silver" },
+  { title: "ERP, automatizaciones e IA.", discipline: "TECNOLOGÍA Y OPERACIONES", text: "Implantamos ERP para conectar compras, facturación e inventario. Automatizamos tareas, desarrollamos aplicaciones a medida y conectamos agentes de IA y formularios Jotform con tus herramientas.", result: "Un dato entra una vez. El trabajo continúa.", links: [["ERP y desarrollo a medida", "digitalizacion.html"], ["Automatizaciones", "automatizacion.html"], ["Jotform y formularios", "jotform.html"], ["Agentes de IA", "agentes.html"]], words: ["Datos", "Procesos", "Operación"], color: "teal" },
+  { title: "CRM y desarrollo comercial.", discipline: "CLIENTES Y VENTAS", text: "Configuramos tu CRM para que contactos, oportunidades y propuestas tengan seguimiento. Definimos el proceso de venta y conectamos captación, mensajes y equipo comercial.", result: "Cada oportunidad, con responsable y siguiente paso.", links: [["Implantación de CRM", "redes-sociales.html?servicio=crm#alcance"], ["Desarrollo comercial", "redes-sociales.html"], ["Automatización comercial", "automatizacion.html"]], words: ["Captación", "CRM", "Seguimiento"], color: "silver" },
+  { title: "Empresa, fiscal y legal.", discipline: "ASESORAMIENTO EMPRESARIAL", text: "Te acompañamos en el establecimiento de tu empresa, la revisión de contratos y las decisiones de inversión. Revisamos la contabilidad y la situación fiscal, con apoyo puntual o asesoramiento recurrente.", result: "Documentación ordenada. Próximos pasos claros.", links: [["Auditoría y asesoría fiscal", "asesoria-fiscal.html"], ["Establecimiento de empresas", "constitucion.html"], ["Asesoría legal", "asesoria-legal.html"], ["Inversión y financiación", "inversiones.html"]], words: ["Documentos", "Revisión", "Decisión"], color: "gold" },
 ];
 function Capabilities() {
-  const [active, setActive] = useState(1);
+  const [active, setActive] = useState(0);
   return <section className="m-capabilities" id="capacidades" aria-labelledby="capabilities-title"><div className="m-wrap">
     <div className="m-section-top" data-reveal><p className="m-kicker">01 / Lo que hacemos</p><p>El criterio de una consultora.<br />La capacidad de un equipo de desarrollo.</p></div>
-    <h2 className="m-display" id="capabilities-title" data-reveal>Las piezas correctas.<br /><span>Trabajando juntas.</span></h2>
+    <h2 className="m-display" id="capabilities-title" data-reveal>Qué necesita tu empresa.<br /><span>Y cómo podemos ayudarte.</span></h2>
     <div className="m-capability-list" data-reveal>{CAPABILITIES.map((item, i) => <article className={`m-capability${active === i ? " is-open" : ""}`} key={item.title}>
       <h3><button type="button" aria-expanded={active === i} aria-controls={`capability-${i}`} id={`capability-button-${i}`} onClick={() => setActive(active === i ? -1 : i)}><small>0{i + 1}</small><span>{item.title}</span><i aria-hidden="true">{active === i ? "−" : "+"}</i></button></h3>
       <div className="m-capability__body" id={`capability-${i}`} role="region" aria-labelledby={`capability-button-${i}`} hidden={active !== i}>
@@ -62,6 +62,7 @@ function Capabilities() {
         <div className={`m-capability__diagram is-${item.color}`}><div className="m-capability__line" aria-hidden="true"><span /><span /><span /></div><div className="m-capability__words">{item.words.map((word, index) => <span key={word}><small>0{index+1}</small>{word}</span>)}</div><p>{item.result}</p></div>
       </div>
     </article>)}</div>
+    <a className="m-text-link m-capabilities__all" href="servicios.html#catalogo">Ver todos los servicios <Arrow /></a>
   </div></section>;
 }
 const EXAMPLES = [

@@ -5,48 +5,44 @@ const { useEffect, useRef, useState } = React;
 
 const CAPABILITY_FAMILIES = [
   {
-    id: "decision", number: "01", label: "Decisión y estructura",
-    title: "Decisiones corporativas con criterio jurídico y financiero trazable.",
-    description: "Reunimos hechos, riesgos, hipótesis y documentos para que dirección, socios o comité puedan comparar, aprobar y ejecutar.",
-    situations: ["Contratos o acuerdos con impacto operativo", "Cambios societarios y reglas de gobierno", "Escenarios de inversión o financiación"],
-    outputs: ["Documento de decisión", "Documentación coordinada", "Condiciones y próximos pasos"],
-    links: [["Legal y contratos", "asesoria-legal.html"], ["Estructura societaria", "constitucion.html"], ["Preparación de financiación", "inversiones.html"]],
-    lab: { scene: "legal", project: "Un acuerdo con impacto operativo necesita una decisión común.", capabilities: ["Criterio jurídico", "Escenarios comparables", "Gobierno de decisión"], result: "Mandato documentado y listo para ejecutar." },
+    id: "operations", number: "01", label: "Tecnología y operaciones",
+    description: "Herramientas conectadas para trabajar con menos tareas manuales y una misma información.",
+    services: [
+      { name: "ERP", text: "Organizamos compras, facturación y operaciones en un sistema de gestión conectado a las herramientas de tu empresa.", href: "digitalizacion.html?servicio=erp#alcance" },
+      { name: "Automatizaciones", text: "Conectamos aplicaciones y automatizamos tareas, avisos y aprobaciones, con reglas claras y revisión de excepciones.", href: "automatizacion.html" },
+      { name: "Desarrollo a medida", text: "Desarrollamos aplicaciones, portales e integraciones adaptados a tu operativa cuando las herramientas existentes no llegan.", href: "digitalizacion.html?servicio=desarrollo#alcance" },
+      { name: "Jotform", text: "Creamos formularios y portales con validaciones, lógica, aprobaciones e integraciones para que cada respuesta active el trabajo necesario.", href: "jotform.html" },
+    ],
+    lab: { mode: "flow", project: "Una solicitud de alta de proveedor llega por correo y debe pasar al ERP.", capabilities: ["Datos del proveedor", "Regla de aprobación", "Conexión con el ERP"], result: "El proveedor queda dado de alta y la aprobación permanece en el historial." },
   },
   {
-    id: "operations", number: "02", label: "Operaciones y sistemas",
-    title: "Procesos visibles, conectados y mantenibles por el equipo.",
-    description: "Definimos el recorrido real antes de tocar herramientas. Después conectamos datos, reglas, aprobaciones y excepciones con responsables claros.",
-    situations: ["Información repartida entre hojas y correos", "Aprobaciones sin estado ni plazo", "Datos copiados entre herramientas"],
-    outputs: ["Mapa de operación", "Flujo implantado", "Registro y guía de recuperación"],
-    links: [["Digitalización de operaciones", "digitalizacion.html"], ["Automatización", "automatizacion.html"], ["Captura de datos y formularios", "jotform.html"]],
-    lab: { scene: "automatizacion", project: "Un alta de proveedor se reparte entre correo, hojas y ERP.", capabilities: ["Diseño del flujo", "Integraciones", "Control de excepciones"], result: "Proceso implantado con estados y responsables visibles." },
+    id: "growth", number: "02", label: "Desarrollo comercial",
+    description: "Una propuesta clara, un proceso de venta ordenado y seguimiento de cada oportunidad.",
+    services: [
+      { name: "CRM", text: "Implantamos o ajustamos tu CRM para reunir contactos, ventas y seguimiento: quién atiende cada oportunidad y cuál es la próxima acción.", href: "redes-sociales.html?servicio=crm#alcance" },
+      { name: "Desarrollo comercial", text: "Trabajamos tu oferta, el cliente al que te diriges, la captación y el proceso comercial, desde el primer interés hasta el seguimiento.", href: "redes-sociales.html?servicio=comercial#alcance" },
+    ],
+    lab: { mode: "growth", project: "Una persona se interesa por tu propuesta. Su información debe llegar al equipo comercial.", capabilities: ["Propuesta y captación", "Datos de la oportunidad", "Seguimiento en CRM"], result: "La oportunidad queda en el CRM con contexto, responsable y siguiente acción." },
   },
   {
-    id: "ai", number: "03", label: "IA aplicada",
-    title: "Agentes integrados en procesos, con fuentes, permisos y evaluación.",
-    description: "La tarea, los datos y el control se definen antes de elegir el modelo. Implantamos casos acotados con revisión humana y registro de actividad.",
-    situations: ["Conocimiento difícil de recuperar", "Tareas intensivas en lectura o clasificación", "Pilotos sin permisos, evaluación o propietario"],
-    outputs: ["Arquitectura del agente", "Caso evaluado en contexto", "Protocolo de operación"],
-    links: [["Agentes de IA", "agentes.html"], ["Sistemas de soporte", "digitalizacion.html"], ["Automatización conectada", "automatizacion.html"]],
-    lab: { scene: "ia", project: "Una tarea intensiva en información no tiene fuentes ni permisos definidos.", capabilities: ["Fuentes autorizadas", "Agente acotado", "Evaluación humana"], result: "Caso en operación con registro, límites y escalado." },
+    id: "decision", number: "03", label: "Empresa, legal y fiscal",
+    description: "Acompañamiento para establecer la empresa, revisar su situación y documentar las decisiones importantes.",
+    services: [
+      { name: "Auditoría y asesoría fiscal", text: "Revisamos información contable y fiscal, identificamos incidencias y ordenamos obligaciones, documentación y próximos pasos.", href: "asesoria-fiscal.html" },
+      { name: "Establecimiento de empresas", text: "Coordinamos la constitución, los acuerdos entre socios, la documentación y los trámites necesarios para empezar a operar.", href: "constitucion.html" },
+      { name: "Legal y contratos", text: "Preparamos y revisamos contratos, acuerdos y documentación societaria para que cada decisión tenga el soporte adecuado.", href: "asesoria-legal.html" },
+      { name: "Preparación de financiación", text: "Organizamos datos, supuestos y escenarios para valorar una inversión o preparar la documentación de una financiación.", href: "inversiones.html" },
+    ],
+    lab: { mode: "document", project: "Un contrato necesita revisión antes de comprometer a tu empresa.", capabilities: ["Alcance y obligaciones", "Responsables y plazos", "Comentarios resueltos"], result: "El acuerdo queda revisado y preparado para la siguiente aprobación o firma." },
   },
   {
-    id: "growth", number: "04", label: "Crecimiento y CRM",
-    title: "Una sola lectura desde el primer interés hasta la siguiente acción comercial.",
-    description: "Conectamos posicionamiento, entrada, cualificación y seguimiento para que cada oportunidad conserve contexto, prioridad y responsable.",
-    situations: ["Mensajes que no atraen al cliente adecuado", "Entradas sin información suficiente", "Oportunidades sin próxima acción"],
-    outputs: ["Arquitectura de mensaje", "Recorrido de captación", "CRM y seguimiento operativo"],
-    links: [["Posicionamiento, captación y CRM", "redes-sociales.html"], ["Formularios y entradas", "jotform.html"], ["Automatización comercial", "automatizacion.html"]],
-    lab: { scene: "social", project: "El interés comercial llega disperso y sin una siguiente acción.", capabilities: ["Posicionamiento", "Captura de contexto", "CRM y seguimiento"], result: "Cada oportunidad llega con prioridad y responsable." },
+    id: "ai", number: "04", label: "IA aplicada",
+    description: "Asistentes conectados a tus documentos y herramientas, con límites y revisión humana.",
+    services: [
+      { name: "Agentes de inteligencia artificial", text: "Diseñamos agentes para consultar información y preparar o ejecutar tareas concretas, con fuentes autorizadas, permisos y evaluación.", href: "agentes.html" },
+    ],
+    lab: { mode: "agent", project: "El equipo necesita una respuesta que está repartida entre documentos y sistemas.", capabilities: ["Fuentes autorizadas", "Permisos definidos", "Respuesta con referencias"], result: "El equipo recibe una respuesta con sus fuentes y sabe qué necesita revisión humana." },
   },
-];
-
-const STARTING_POINTS = [
-  { id: "blocked", label: "La decisión está bloqueada entre varias áreas", title: "Primero fijamos qué debe decidirse y con qué información.", text: "Separamos hechos, supuestos, riesgos y derechos de decisión. El resultado es un mandato que permite movilizar a cada especialista sobre el mismo alcance.", families: ["decision", "operations"], outputs: ["Pregunta ejecutiva", "Opciones comparables", "Mandato inicial"], context: "proyecto" },
-  { id: "manual", label: "La operación depende de correos, hojas y seguimiento manual", title: "Primero documentamos el recorrido completo.", text: "Mapeamos entradas, decisiones, esperas, excepciones y sistemas. Solo después definimos qué automatizar y qué debe seguir en manos de una persona.", families: ["operations", "ai"], outputs: ["Mapa actual", "Flujo objetivo", "Prioridad de implantación"], context: "digitalizacion" },
-  { id: "technology", label: "Una inversión tecnológica no llega al uso diario", title: "Primero definimos el caso, los datos y el criterio de aceptación.", text: "Acotamos la tarea, el propietario, las fuentes y los permisos. La tecnología se valida dentro del proceso que debe mejorar, no en una demostración aislada.", families: ["ai", "operations"], outputs: ["Caso priorizado", "Prueba en contexto", "Plan de implantación"], context: "ia" },
-  { id: "commercial", label: "La captación no termina en un seguimiento claro", title: "Primero conectamos promesa, contexto y siguiente acción.", text: "Revisamos el mensaje, la entrada y el traspaso al CRM para que cada oportunidad llegue al responsable adecuado con información suficiente.", families: ["growth", "operations"], outputs: ["Criterio de encaje", "Recorrido comercial", "Responsable y próxima acción"], context: "crecimiento" },
 ];
 
 function Arrow({ diagonal = false }) { return <span className="svc-arrow" aria-hidden="true">{diagonal ? "↗" : "→"}</span>; }
@@ -85,7 +81,6 @@ function CapabilityMap() {
   const refs = useRef([]);
   const labRef = useRef(null);
   const { phase: stage, selectPhase } = useScrollScene({ ref: labRef, count: 4, reducedMotion, resetKey: active });
-  const modes = ["document", "flow", "agent", "growth"];
   const stages = ["Entender", "Preparar", "Validar", "Entregar"];
   const caption = [family.lab.project, family.lab.capabilities.join(" · "), "Revisamos el resultado con la persona responsable antes de avanzar.", family.lab.result][stage];
 
@@ -108,7 +103,7 @@ function CapabilityMap() {
       }}><span>{item.number}</span><b>{item.label}</b><i /></button>)}
     </div>
     <article id="map-panel" className="svc-lab__panel" role="tabpanel" aria-labelledby={`map-tab-${family.id}`} key={family.id}>
-      <ServiceMoment mode={modes[active]} stage={stage} reducedMotion={reducedMotion} />
+      <ServiceMoment mode={family.lab.mode} stage={stage} reducedMotion={reducedMotion} />
       <div className="svc-lab__caption" key={stage}><span>0{stage + 1} / {stages[stage]}</span><p>{caption}</p></div>
     </article>
     <footer className="svc-lab__timeline">
@@ -123,63 +118,42 @@ function Hero() {
     <div className="svc-shell svc-hero__layout">
       <div className="svc-hero__copy">
         <div className="svc-overline"><span>Qué podemos hacer por tu empresa</span><small>04 áreas</small></div>
-        <h1>Las capacidades que <em>necesita tu proyecto.</em></h1>
-        <p>Derecho, operaciones y tecnología trabajan sobre el mismo problema. Reunimos las capacidades necesarias y te acompañamos hasta la entrega.</p>
-        <div className="svc-actions"><a className="svc-button svc-button--gold" href="#orientador">Orientar el proyecto <Arrow /></a><a className="svc-text-link" href="contacto.html?context=proyecto">Plantear un proyecto <Arrow /></a></div>
+        <h1>Tecnología y asesoría <em>para tu empresa.</em></h1>
+        <p>Implantamos CRM y ERP, automatizamos procesos y te acompañamos en el desarrollo comercial, la gestión fiscal y la creación de empresas.</p>
+        <div className="svc-actions"><a className="svc-button svc-button--gold" href="#catalogo">Ver todos los servicios <Arrow /></a><a className="svc-text-link" href="contacto.html?context=proyecto">Cuéntanos qué necesitas <Arrow /></a></div>
       </div>
       <CapabilityMap />
     </div>
   </header>;
 }
 
-function ProjectRouter() {
-  const [active, setActive] = useState(0);
-  const point = STARTING_POINTS[active];
-  const related = point.families.map((id) => CAPABILITY_FAMILIES.find((family) => family.id === id));
-  const refs = useRef([]);
-  const move = (event,index) => {
-    if (!["ArrowUp","ArrowDown","Home","End"].includes(event.key)) return;
-    event.preventDefault();
-    const next = event.key === "Home" ? 0 : event.key === "End" ? STARTING_POINTS.length - 1 : (index + (event.key === "ArrowDown" ? 1 : -1) + STARTING_POINTS.length) % STARTING_POINTS.length;
-    setActive(next); refs.current[next]?.focus();
-  };
-  return <section className="svc-router" id="orientador" aria-labelledby="router-title">
+function ServiceCatalog() {
+  return <section className="svc-catalog" id="catalogo" aria-labelledby="catalog-title">
+    <span id="servicios" className="svc-catalog__anchor" aria-hidden="true" />
+    <span id="orientador" className="svc-catalog__anchor" aria-hidden="true" />
     <div className="svc-shell">
-      <div className="svc-section-head" data-svc-reveal><span>01 / PUNTO DE PARTIDA</span><h2 id="router-title">Describe la situación. <em>A partir de ella, identificamos las capacidades necesarias.</em></h2><p>Selecciona la situación más próxima para ver qué debe quedar definido antes de iniciar.</p></div>
-      <div className="svc-router__workspace" data-svc-reveal>
-        <div className="svc-router__questions" role="tablist" aria-orientation="vertical" aria-label="Situaciones empresariales">
-          {STARTING_POINTS.map((item,index) => <button key={item.id} ref={(node) => { refs.current[index] = node; }} type="button" role="tab" id={`start-tab-${item.id}`} aria-controls="start-panel" aria-selected={active === index} tabIndex={active === index ? 0 : -1} onClick={() => setActive(index)} onKeyDown={(event) => move(event,index)}><span>0{index+1}</span><b>{item.label}</b><Arrow /></button>)}
-        </div>
-        <article id="start-panel" className="svc-router__answer" role="tabpanel" aria-labelledby={`start-tab-${point.id}`} key={point.id}>
-          <header><span>LECTURA INICIAL / 0{active+1}</span><b>PROYECTO TRANSVERSAL</b></header>
-          <h3>{point.title}</h3><p>{point.text}</p>
-          <div className="svc-router__answer-lower">
-            <section><span>CAPACIDADES PROBABLES</span>{related.map((family) => <a key={family.id} href={`#${family.id}`}><i>{family.number}</i>{family.label}<Arrow diagonal /></a>)}</section>
-            <section><span>DEBERÍA QUEDAR DEFINIDO</span>{point.outputs.map((output,index) => <b key={output}><i>{index+1}</i>{output}</b>)}</section>
-          </div>
-          <a className="svc-button svc-button--light" href={`contacto.html?context=${point.context}`}>Plantear este proyecto <Arrow /></a>
-        </article>
+      <div className="svc-section-head" data-svc-reveal>
+        <span>01 / NUESTROS SERVICIOS</span>
+        <h2 id="catalog-title">Qué necesitas.<br /><em>Qué podemos hacer.</em></h2>
+        <p>Puedes contratar un servicio concreto o combinar varios. En cada página encontrarás qué incluye y cómo lo trabajamos.</p>
       </div>
-    </div>
-  </section>;
-}
-
-function Families() {
-  const [open, setOpen] = useState(0);
-  return <section className="svc-families" aria-labelledby="families-title">
-    <div className="svc-shell">
-      <div className="svc-section-head" data-svc-reveal><span>02 / CAPACIDADES</span><h2 id="families-title">Cuatro grupos de capacidades. <em>Una misma dirección de proyecto.</em></h2><p>Las capacidades se activan según el mandato y comparten calendario, responsables y registro de decisiones.</p></div>
-      <div className="svc-family-list">
-        {CAPABILITY_FAMILIES.map((family,index) => <article id={family.id} className={open === index ? "is-open" : ""} key={family.id} data-svc-reveal>
-          <button type="button" aria-expanded={open === index} aria-controls={`family-panel-${family.id}`} onClick={() => setOpen(open === index ? -1 : index)}>
-            <span>{family.number}</span><small>{family.label}</small><h3>{family.title}</h3><i aria-hidden="true">{open === index ? "−" : "+"}</i>
-          </button>
-          <div id={`family-panel-${family.id}`} className="svc-family-list__panel" hidden={open !== index}>
-            <div><p>{family.description}</p><span>SEÑALES</span><ul>{family.situations.map((item) => <li key={item}>{item}</li>)}</ul></div>
-            <div><span>RESULTADOS HABITUALES</span><ol>{family.outputs.map((item,outputIndex) => <li key={item}><span>0{outputIndex+1}</span>{item}</li>)}</ol></div>
-            <nav aria-label={`Especialidades de ${family.label}`}>{family.links.map(([label,href]) => <a key={href} href={href}>{label}<Arrow diagonal /></a>)}</nav>
-          </div>
-        </article>)}
+      <div className="svc-catalog__families">
+        {CAPABILITY_FAMILIES.map((family) => <section className="svc-catalog__family" id={family.id} key={family.id} aria-labelledby={`catalog-${family.id}`}>
+          <header className="svc-catalog__family-head" data-svc-reveal>
+            <span>{family.number}</span>
+            <h3 id={`catalog-${family.id}`}>{family.label}</h3>
+            <p>{family.description}</p>
+          </header>
+          <ul className="svc-catalog__services">
+            {family.services.map((service) => <li key={service.name}>
+              <a href={service.href} aria-label={`${service.name}: ver el servicio`}>
+                <h4>{service.name}</h4>
+                <p>{service.text}</p>
+                <Arrow diagonal />
+              </a>
+            </li>)}
+          </ul>
+        </section>)}
       </div>
     </div>
   </section>;
@@ -188,15 +162,15 @@ function Families() {
 function MandatePrinciple() {
   return <section className="svc-principle" aria-labelledby="principle-title">
     <div className="svc-shell svc-principle__layout">
-      <div data-svc-reveal><span>03 / FORMA DE CONTRATAR</span><h2 id="principle-title">Cada frente conserva <em>alcance y criterio de aceptación propios.</em></h2></div>
-      <div data-svc-reveal><p>Si un frente puede ejecutarse de forma independiente, la propuesta identifica alcance, responsable, calendario y criterio de aceptación.</p><strong>No trabajamos como bolsa de horas.</strong><a href="nosotros.html">Ver cómo gobernamos cada encargo <Arrow /></a></div>
+      <div data-svc-reveal><span>02 / CÓMO EMPEZAMOS</span><h2 id="principle-title">Un servicio concreto.<br /><em>O un proyecto que los conecta.</em></h2></div>
+      <div data-svc-reveal><p>Nos cuentas qué necesitas y revisamos el punto de partida. Antes de empezar, recibirás una propuesta con el trabajo incluido, los responsables, el calendario y los honorarios.</p><strong>Un alcance claro antes de empezar.</strong><a href="contacto.html?context=proyecto">Hablemos de tu empresa <Arrow /></a></div>
     </div>
   </section>;
 }
 
 function ServicesApp() {
   useReveal();
-  return <div className="svc-page"><window.MedlaSiteHeader current="services" /><main><Hero /><ProjectRouter /><Families /><MandatePrinciple /></main><window.MedlaSiteFooter current="services" /></div>;
+  return <div className="svc-page"><window.MedlaSiteHeader current="services" /><main><Hero /><ServiceCatalog /><MandatePrinciple /></main><window.MedlaSiteFooter current="services" /></div>;
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(<ServicesApp />);

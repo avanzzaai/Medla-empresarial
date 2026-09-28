@@ -11,6 +11,7 @@ const pages = [
   "contacto.html",
   "privacidad.html",
   "asesoria-legal.html",
+  "asesoria-fiscal.html",
   "constitucion.html",
   "inversiones.html",
   "digitalizacion.html",

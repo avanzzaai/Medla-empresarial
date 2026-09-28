@@ -54,7 +54,7 @@ const PATHS = [
     id: "diagnostico",
     icon: <IconCal />,
     title: "Revisión de encaje",
-    desc: "Para valorar si MEDLA debe asumir la dirección del proyecto y qué información falta para definir el mandato.",
+    desc: "Para contarnos qué necesitas y valorar cómo podemos ayudarte.",
     meta: "Contexto inicial",
   },
   {
@@ -105,13 +105,15 @@ function CtPaths({ active, onPick }) {
 
 /* ─────────── Multi-step Form ─────────── */
 const ALCANCE_OPTIONS = [
-  { value: "Asesoría legal corporativa", label: "Asesoría legal corporativa" },
-  { value: "Constitución / reestructura", label: "Constitución o reestructuración societaria" },
+  { value: "CRM y desarrollo comercial", label: "CRM y desarrollo comercial" },
+  { value: "ERP y digitalización", label: "ERP y digitalización" },
+  { value: "Automatización e integración", label: "Automatizaciones" },
+  { value: "Auditoría y asesoría fiscal", label: "Auditoría y asesoría fiscal" },
+  { value: "Constitución / reestructura", label: "Establecimiento de empresas" },
+  { value: "Jotform y formularios", label: "Jotform y formularios" },
+  { value: "IA aplicada", label: "Agentes de IA" },
+  { value: "Asesoría legal corporativa", label: "Asesoría legal" },
   { value: "Inversión y financiación", label: "Inversión y financiación" },
-  { value: "Digitalización de procesos", label: "Digitalización de procesos" },
-  { value: "Automatización e integración", label: "Automatización e integración" },
-  { value: "IA aplicada", label: "IA aplicada" },
-  { value: "Posicionamiento, captación y CRM", label: "Posicionamiento, captación y CRM" },
   { value: "Aún no lo tengo claro", label: "Aún no lo tengo claro" },
 ];
 
@@ -122,27 +124,27 @@ const CONTEXT_PRESETS = {
     notas: "Punto de partida: una decisión o iniciativa relevante afecta a varias áreas y necesita dirección, implantación y transferencia al equipo.",
   },
   operacion: {
-    label: "Operación y sistemas",
-    alcance: ["Digitalización de procesos", "Automatización e integración"],
+    label: "ERP, digitalización y automatizaciones",
+    alcance: ["ERP y digitalización", "Automatización e integración"],
     notas: "Punto de partida: un proceso de aprobaciones manuales sin un estado ni un responsable claros.",
   },
   legal: {
-    label: "Asesoría legal empresarial",
+    label: "Asesoría legal",
     alcance: ["Asesoría legal corporativa"],
     notas: "Punto de partida: una decisión bloqueada por contratos, obligaciones o versiones dispersas.",
   },
   ia: {
-    label: "IA aplicada",
+    label: "Agentes de IA",
     alcance: ["IA aplicada"],
     notas: "Punto de partida: un caso de IA que aún no opera con fuentes, permisos y controles definidos.",
   },
   growth: {
-    label: "Posicionamiento, captación y CRM",
-    alcance: ["Posicionamiento, captación y CRM"],
+    label: "CRM y desarrollo comercial",
+    alcance: ["CRM y desarrollo comercial"],
     notas: "Punto de partida: oportunidades comerciales sin responsable o próxima acción.",
   },
   constitucion: {
-    label: "Constitución y estructura societaria",
+    label: "Establecimiento de empresas",
     alcance: ["Constitución / reestructura", "Asesoría legal corporativa"],
     notas: "Punto de partida: hay que ordenar propiedad, administración, capital y reglas de decisión antes de operar o cambiar la estructura.",
   },
@@ -152,23 +154,43 @@ const CONTEXT_PRESETS = {
     notas: "Punto de partida: necesitamos comparar escenarios o preparar una decisión de financiación con datos y supuestos trazables.",
   },
   digitalizacion: {
-    label: "Digitalización de operaciones",
-    alcance: ["Digitalización de procesos"],
-    notas: "Punto de partida: la información vive en correos, hojas o herramientas que no comparten estados ni responsables.",
+    label: "ERP y digitalización",
+    alcance: ["ERP y digitalización"],
+    notas: "Punto de partida: queremos implantar o mejorar un ERP y conectar la información de compras, ventas, finanzas y operaciones.",
   },
   automatizacion: {
-    label: "Automatización de flujos",
+    label: "Automatizaciones",
     alcance: ["Automatización e integración"],
     notas: "Punto de partida: el equipo repite pasos previsibles o persigue aprobaciones que podrían quedar conectadas y registradas.",
   },
   crecimiento: {
-    label: "Posicionamiento, captación y CRM",
-    alcance: ["Posicionamiento, captación y CRM"],
-    notas: "Punto de partida: la captación no conserva contexto o no termina en una próxima acción comercial con responsable.",
+    label: "CRM y desarrollo comercial",
+    alcance: ["CRM y desarrollo comercial"],
+    notas: "Punto de partida: necesitamos un CRM y un proceso comercial que conecten captación, oportunidades, propuestas y seguimiento.",
+  },
+  fiscal: {
+    label: "Auditoría y asesoría fiscal",
+    alcance: ["Auditoría y asesoría fiscal"],
+    notas: "Punto de partida: queremos revisar la situación fiscal de la empresa, sus obligaciones y la documentación antes de tomar una decisión.",
+  },
+  crm: {
+    label: "CRM y desarrollo comercial",
+    alcance: ["CRM y desarrollo comercial"],
+    notas: "Punto de partida: queremos implantar o mejorar un CRM para gestionar clientes, oportunidades y próximas acciones comerciales.",
+  },
+  erp: {
+    label: "ERP y digitalización",
+    alcance: ["ERP y digitalización"],
+    notas: "Punto de partida: necesitamos un ERP que conecte la gestión de compras, ventas, finanzas y operaciones sin duplicar información.",
+  },
+  comercial: {
+    label: "CRM y desarrollo comercial",
+    alcance: ["CRM y desarrollo comercial"],
+    notas: "Punto de partida: queremos mejorar la captación, el seguimiento de oportunidades y la coordinación del equipo comercial.",
   },
   jotform: {
-    label: "Jotform y flujos de datos",
-    alcance: ["Digitalización de procesos", "Automatización e integración"],
+    label: "Jotform y formularios",
+    alcance: ["Jotform y formularios"],
     notas: "Punto de partida: la captura de datos genera errores, duplicados o trabajo manual antes de llegar al sistema y a la persona correctos.",
   },
   cuadernos: {
@@ -424,8 +446,8 @@ function CtForm({ pathId }) {
               <div className="form-step form-step--issue">
                 <div>
                   <div className="step-label">Paso 1 · {stepHints[0]}</div>
-                  <h4 id="contact-issue-question">¿Qué debe decidirse o quedar funcionando? <span aria-hidden="true">*</span><span className="sr-only"> Respuesta obligatoria.</span></h4>
-                  <p id="contact-issue-hint" className="form-step__hint">Indica el objetivo, la consecuencia de no actuar, quién interviene y el plazo si ya existe.</p>
+                  <h4 id="contact-issue-question">¿Qué necesitas resolver o poner en marcha? <span aria-hidden="true">*</span><span className="sr-only"> Respuesta obligatoria.</span></h4>
+                  <p id="contact-issue-hint" className="form-step__hint">Cuéntanos la situación, qué te gustaría conseguir y si tienes algún plazo.</p>
                 </div>
                 {selectedContext && (
                   <div className="brief-origin">
@@ -499,8 +521,8 @@ function CtForm({ pathId }) {
                 </div>
                 <div className="context-stack">
                   <fieldset className="context-block">
-                    <legend><span>01</span> Área o capacidad</legend>
-                    <p>Selecciona las capacidades que puedan estar relacionadas.</p>
+                    <legend><span>01</span> Servicios que te interesan</legend>
+                    <p>Puedes elegir uno o varios, o dejar que lo definamos contigo.</p>
                     <div className="options-grid options-grid--compact">
                       {ALCANCE_OPTIONS.map((option) => (
                         <button
@@ -684,8 +706,8 @@ const FAQS = [
     a: "El trabajo puede coordinarse de forma remota. La disponibilidad y, cuando aplique, la jurisdicción y los responsables locales se confirman durante la revisión de encaje.",
   },
   {
-    q: "¿Puedo empezar por un solo frente?",
-    a: "Activamos las capacidades que exige el mandato. Un frente puede abordarse de forma independiente cuando tiene alcance, responsable y criterio de aceptación propios; no trabajamos como bolsa de horas.",
+    q: "¿Puedo contratar un solo servicio?",
+    a: "Sí. Puedes empezar por un servicio concreto, como un CRM, una automatización o una revisión fiscal. La propuesta indica qué incluye y si necesita coordinarse con algún otro trabajo.",
   },
   {
     q: "¿Cómo se acuerdan las condiciones?",

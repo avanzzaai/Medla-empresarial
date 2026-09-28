@@ -1,9 +1,11 @@
 import ServiceMoment from "./components/service-moment.jsx";
 import useScrollScene from "./components/use-scroll-scene.jsx";
+import fiscalSpecialty from "./components/fiscal-specialty.js";
 
 const { useEffect, useRef, useState } = React;
 
 const SPECIALTIES = {
+  fiscal: fiscalSpecialty,
   legal: {
     descriptor: "Asesoría legal empresarial",
     eyebrow: "Criterio jurídico conectado con la ejecución",
@@ -188,14 +190,14 @@ const SPECIALTIES = {
   },
 
   constitucion: {
-    descriptor: "Constitución de sociedades",
-    eyebrow: "Decisiones societarias de origen",
+    descriptor: "Establecimiento de empresas",
+    eyebrow: "Establecimiento de empresas y constitución de sociedades",
     accent: "#64b7ae",
     hero: {
       before: "Una empresa preparada ",
       emphasis: "desde el principio.",
       after: "",
-      lead: "Ordenamos socios, aportaciones, gobierno, documentación y trámites para que la estructura refleje cómo funcionará el proyecto.",
+      lead: "Te acompañamos en la constitución y puesta en marcha de tu empresa: estructura societaria, acuerdos entre socios, documentación y coordinación de los trámites de inicio.",
       note: "La secuencia concreta depende de la jurisdicción y de las características del caso.",
     },
     context: "constitucion",
@@ -249,14 +251,14 @@ const SPECIALTIES = {
   },
 
   digitalizacion: {
-    descriptor: "Digitalización operativa",
-    eyebrow: "Sistemas para la operación",
+    descriptor: "ERP y digitalización",
+    eyebrow: "ERP, integraciones y desarrollo a medida",
     accent: "#68bcb4",
     hero: {
       before: "Tu operación, ",
       emphasis: "bien conectada.",
       after: "",
-      lead: "Convertimos procesos repartidos entre hojas, correos y conocimiento informal en una solución conectada, documentada y mantenible.",
+      lead: "Implantamos y conectamos sistemas ERP para reunir compras, facturación, inventario y operación. Cuando tu proceso necesita algo específico, desarrollamos las aplicaciones e integraciones que lo completan.",
       note: "La tecnología se elige después de entender decisiones, usuarios y datos.",
     },
     context: "digitalizacion",
@@ -286,8 +288,8 @@ const SPECIALTIES = {
     },
     scope: [
       { name: "Descubrimiento", signal: "El proceso necesita una lectura común antes de hablar de plataformas.", work: "Seguimos casos reales, entrevistamos a responsables y trazamos decisiones, documentos, estados y excepciones.", outputs: ["Mapa de operación", "Inventario de datos", "Fricciones priorizadas"] },
-      { name: "Arquitectura", signal: "Hay que decidir qué permanece, qué se conecta y qué conviene construir.", work: "Definimos componentes, flujos de información, permisos e integraciones con criterio de mantenimiento y propiedad.", outputs: ["Arquitectura objetivo", "Decisiones técnicas", "Plan por etapas"] },
-      { name: "Implantación", signal: "El sistema debe probarse dentro de la operación sin interrumpirla.", work: "Construimos por recorridos completos, validamos con usuarios y ajustamos reglas y pantallas sobre casos representativos.", outputs: ["Flujos funcionales", "Validación de usuarios", "Registro de incidencias"] },
+      { id: "erp", name: "ERP e integraciones", signal: "Compras, facturación e inventario trabajan con datos separados.", work: "Definimos qué módulos necesitas, configuramos los procesos acordados y conectamos el ERP con tus herramientas. Preparamos la migración y contrastamos los datos antes de la puesta en marcha.", outputs: ["ERP configurado", "Integraciones probadas", "Datos contrastados"] },
+      { id: "desarrollo", name: "Desarrollo a medida", signal: "Tu proceso necesita una aplicación, portal o integración que no resuelve la configuración estándar.", work: "Diseñamos y desarrollamos la solución por entregas, probándola con sus usuarios. Documentamos el código, las decisiones y su operación.", outputs: ["Aplicación o portal", "Validación de usuarios", "Código y documentación"] },
       { name: "Transferencia", signal: "La solución necesita quedar entendida, documentada y gobernada.", work: "Entregamos repositorio, decisiones, manuales y responsabilidades; acordamos cómo se solicitan y aprueban cambios.", outputs: ["Documentación", "Responsables", "Criterios de evolución"] },
     ],
     deliverables: [
@@ -371,14 +373,14 @@ const SPECIALTIES = {
   },
 
   crecimiento: {
-    descriptor: "Posicionamiento y captación",
-    eyebrow: "Del mensaje al seguimiento comercial",
+    descriptor: "CRM y desarrollo comercial",
+    eyebrow: "CRM, captación y desarrollo comercial",
     accent: "#62aaa6",
     hero: {
       before: "Cada oportunidad ",
       emphasis: "tiene un siguiente paso.",
       after: "",
-      lead: "Conectamos propuesta, contenido, formularios y CRM para que cada oportunidad llegue con contexto, responsable y próxima acción.",
+      lead: "Diseñamos tu proceso comercial e implantamos el CRM que lo sostiene: contactos, oportunidades, propuestas y seguimiento. Conectamos captación, formularios y equipo para que cada conversación tenga continuidad.",
       note: "El sistema se diseña alrededor del recorrido del cliente y de la capacidad real del equipo para atenderlo.",
     },
     context: "crecimiento",
@@ -408,9 +410,9 @@ const SPECIALTIES = {
     },
     scope: [
       { name: "Posicionamiento", signal: "La oferta necesita una formulación precisa antes de producir contenido.", work: "Ordenamos audiencias, problemas, propuesta, pruebas disponibles y lenguaje; definimos qué merece repetirse y qué debe desaparecer.", outputs: ["Arquitectura de mensajes", "Prioridades de audiencia", "Guía de lenguaje"] },
-      { name: "Sistema editorial", signal: "El contenido debe sostener una idea a lo largo del tiempo y de varios formatos.", work: "Diseñamos temas, series, formatos y circuitos de aprobación ajustados a la capacidad del equipo.", outputs: ["Líneas editoriales", "Formatos", "Flujo de producción"] },
+      { id: "comercial", name: "Desarrollo comercial", signal: "El equipo necesita un proceso compartido para buscar, cualificar y trabajar oportunidades.", work: "Definimos segmentos, propuesta comercial, etapas de venta, criterios de cualificación y rutinas de seguimiento. Preparamos materiales y un cuadro de actividad para revisar qué funciona.", outputs: ["Plan comercial", "Proceso de venta", "Materiales e indicadores"] },
       { name: "Captación", signal: "El interés necesita un siguiente paso claro y una entrada con contexto.", work: "Conectamos piezas, páginas, formularios y criterios de calificación sin añadir fricción innecesaria.", outputs: ["Recorridos de entrada", "Campos y criterios", "Mensajes de continuidad"] },
-      { name: "CRM y seguimiento", signal: "Cada oportunidad necesita responsable, estado e historial.", work: "Definimos el paso al CRM, reglas de asignación, cadencias y señales para continuar, pausar o cerrar el seguimiento.", outputs: ["Modelo de oportunidad", "Responsables", "Secuencias de seguimiento"] },
+      { id: "crm", name: "Implantación de CRM", signal: "Cada oportunidad necesita responsable, estado e historial.", work: "Configuramos contactos, empresas, etapas y permisos; preparamos la importación de datos y conectamos formularios, correo y automatizaciones según el alcance. Formamos al equipo para trabajar con el CRM.", outputs: ["CRM configurado", "Datos e integraciones", "Formación y seguimiento"] },
     ],
     deliverables: [
       { code: "GR-01", title: "Sistema de posicionamiento", text: "Una base común para que web, contenido y conversaciones comerciales expresen la misma propuesta.", contents: ["Audiencias", "Arquitectura de mensajes", "Criterios de tono"] },
@@ -494,6 +496,7 @@ const SPECIALTIES = {
 };
 
 const PAGE_ALIASES = {
+  "asesoria-fiscal": "fiscal",
   "asesoria-legal": "legal",
   agentes: "ia",
   automatizacion: "automatizacion",
@@ -647,7 +650,10 @@ function Signals({ problem }) {
 }
 
 function Scope({ scope }) {
-  const [active, setActive] = useState(0);
+  const [active, setActive] = useState(() => {
+    const service = new URLSearchParams(window.location.search).get("servicio");
+    return Math.max(0, scope.findIndex((entry) => entry.id === service));
+  });
   const refs = useRef([]);
   const item = scope[active];
 

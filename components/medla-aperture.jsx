@@ -1,7 +1,84 @@
-const { useEffect, useRef } = React;
+import { LAND } from "./globe-land.js";
 
-/* A single machined M. Its entrance settles once; after that the renderer
-   wakes only for interaction, viewport changes or a visibility transition. */
+const { useEffect, useRef } = React;
+const RAD = Math.PI / 180;
+
+// Unlabelled, illustrative connection points: no offices or coverage claims.
+const HUBS = [[40.4, -3.7], [40.7, -74], [-23.6, -46.6], [-26.2, 28.0], [25.2, 55.3], [1.3, 103.8], [35.7, 139.7], [-33.9, 151.2], [37.8, -122.4]];
+const CONNECTIONS = [[0,1,.17],[0,2,.23],[0,3,.19],[0,4,.12],[4,5,.18],[5,6,.14],[5,7,.18],[8,6,.23],[1,8,.12]];
+
+function spherePoint(lat, lon) {
+  const latitude = lat * RAD, longitude = lon * RAD, latitudeCosine = Math.cos(latitude);
+  return [latitudeCosine * Math.sin(longitude), Math.sin(latitude), latitudeCosine * Math.cos(longitude)];
+}
+function makeGeography() {
+  const polygons = LAND.map((points) => ({
+    points,
+    minLat: Math.min(...points.map(p => p[0])), maxLat: Math.max(...points.map(p => p[0])),
+    minLon: Math.min(...points.map(p => p[1])), maxLon: Math.max(...points.map(p => p[1])),
+  }));
+  const inside = (lat, lon, polygon) => {
+    if (lat < polygon.minLat || lat > polygon.maxLat || lon < polygon.minLon || lon > polygon.maxLon) return false;
+    let found = false;
+    const points = polygon.points;
+    for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+      const a = points[i], b = points[j];
+      if ((a[0] > lat) !== (b[0] > lat) && lon < (b[1] - a[1]) * (lat - a[0]) / (b[0] - a[0]) + a[1]) found = !found;
+    }
+    return found;
+  };
+  const dots = [];
+  let row = 0;
+  for (let lat = -55.6; lat <= 83; lat += 1.48) {
+    const step = 1.48 / Math.max(0.18, Math.cos(lat * RAD));
+    for (let lon = -180 + (row % 2) * step / 2; lon < 180; lon += step) {
+      if (polygons.some(p => inside(lat, lon, p))) dots.push(spherePoint(lat, lon));
+    }
+    row++;
+  }
+  const coasts = LAND.map((polygon) => {
+    const points = [];
+    polygon.forEach((a, index) => {
+      const b = polygon[(index + 1) % polygon.length];
+      const count = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 1.4));
+      for (let i = 0; i < count; i++) {
+        const t = i / count;
+        points.push(spherePoint(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t));
+      }
+    });
+    points.push(points[0]);
+    return points;
+  });
+  const graticules = [];
+  [-60,-30,0,30,60].forEach(lat => {
+    const points = [];
+    for (let lon = -180; lon <= 180; lon += 3) points.push(spherePoint(lat, lon));
+    graticules.push(points);
+  });
+  for (let lon = 0; lon < 360; lon += 30) {
+    const points = [];
+    for (let lat = -90; lat <= 90; lat += 3) points.push(spherePoint(lat, lon));
+    graticules.push(points);
+  }
+  return { dots, coasts, graticules };
+}
+const GEOGRAPHY = makeGeography();
+const HUB_VECTORS = HUBS.map(([lat, lon]) => spherePoint(lat, lon));
+const ROUTES = CONNECTIONS.map(([from, to, lift]) => {
+  const a = HUB_VECTORS[from], b = HUB_VECTORS[to];
+  const angle = Math.acos(Math.max(-1, Math.min(1, a.reduce((sum, value, i) => sum + value * b[i], 0))));
+  const sine = Math.sin(angle);
+  const points = [];
+  for (let i = 0; i <= 84; i++) {
+    const t = i / 84, height = 1 + Math.sin(Math.PI * t) * lift;
+    const start = Math.sin((1 - t) * angle) / sine, end = Math.sin(t * angle) / sine;
+    points.push(a.map((value, axis) => (value * start + b[axis] * end) * height));
+  }
+  return points;
+});
+
+/* A mapped, slowly rotating Earth with geographic great-circle connections.
+   Canvas owns animation without React renders; hidden/offscreen work stops. */
 export default function MedlaAperture({ reducedMotion = false }) {
   const canvasRef = useRef(null);
   const controlsRef = useRef({ reducedMotion });
@@ -13,249 +90,166 @@ export default function MedlaAperture({ reducedMotion = false }) {
   }, [reducedMotion]);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d", { alpha: true });
+    const canvas = canvasRef.current, ctx = canvas?.getContext("2d", { alpha: true });
     if (!ctx) return;
     const hero = canvas.closest(".m-hero") || canvas;
-    let width = 0, height = 0, ratio = 1, frame = 0, lastTime = 0;
+    let width = 0, height = 0, ratio = 1, frame = 0, lastTime = 0, lastDraw = 0;
     let visible = !("IntersectionObserver" in window), disposed = false;
-    let elapsed = controlsRef.current.reducedMotion ? 2.65 : 0;
-    let pointerX = 0, pointerY = 0, targetX = 0, targetY = 0;
-    let scroll = 0, targetScroll = 0, scrollDirty = true, needsDraw = true;
-    const entranceDuration = 2.65;
-    const floorY = -1.60;
-    const outer = [
-      [-1.29, -1.60], [-1.29, 1.60], [-0.76, 1.60],
-      [0, 0.30], [0.76, 1.60], [1.29, 1.60],
-      [1.29, -1.60], [0.73, -1.60], [0.73, 0.47],
-      [0.23, -0.39], [-0.23, -0.39], [-0.73, 0.47], [-0.73, -1.60],
-    ];
-
-    function insetPolygon(points, amount) {
-      const area = points.reduce((sum, p, i) => {
-        const q = points[(i + 1) % points.length];
-        return sum + p[0] * q[1] - q[0] * p[1];
-      }, 0);
-      const sign = area > 0 ? 1 : -1;
-      const edges = points.map((p, i) => {
-        const q = points[(i + 1) % points.length];
-        const dx = q[0] - p[0], dy = q[1] - p[1], length = Math.hypot(dx, dy);
-        return { p: [p[0] - dy / length * amount * sign, p[1] + dx / length * amount * sign], d: [dx, dy] };
-      });
-      return edges.map((edge, i) => {
-        const previous = edges[(i + edges.length - 1) % edges.length];
-        const denominator = previous.d[0] * edge.d[1] - previous.d[1] * edge.d[0];
-        if (Math.abs(denominator) < 0.00001) return edge.p;
-        const dx = edge.p[0] - previous.p[0], dy = edge.p[1] - previous.p[1];
-        const t = (dx * edge.d[1] - dy * edge.d[0]) / denominator;
-        return [previous.p[0] + t * previous.d[0], previous.p[1] + t * previous.d[1]];
-      });
-    }
-    const inner = insetPolygon(outer, 0.046);
+    let elapsed = 0, pointerX = 0, pointerY = 0, targetX = 0, targetY = 0;
 
     function draw() {
       if (!width || !height || disposed) return;
       const still = controlsRef.current.reducedMotion;
-      const progress = still ? 1 : Math.min(1, elapsed / entranceDuration);
-      const settled = 1 - Math.pow(1 - progress, 4);
-      const yaw = -0.29 - (1 - settled) * 0.16 + (still ? 0 : pointerX * 0.060 + scroll * 0.025);
-      const pitch = 0.105 + (still ? 0 : pointerY * 0.024);
-      const cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
-      const unit = Math.min(width / 4.55, height / 4.65) * (0.97 + settled * 0.03);
-      const originX = width * 0.54, originY = height * 0.455 + (1 - settled) * unit * 0.12;
-      const ctxOpacity = Math.min(1, 0.08 + progress * 2.6);
-      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-      ctx.clearRect(0, 0, width, height);
-      ctx.globalAlpha = ctxOpacity;
-
-      function project(point, reflected = false) {
-        const [x, initialY, z] = point;
-        const y = reflected ? 2 * floorY - initialY : initialY;
-        const rx = x * cy + z * sy, rz = z * cy - x * sy;
-        const ry = y * cp - rz * sp, depth = rz * cp + y * sp;
-        const scale = 8 / (8 + depth);
-        return { x: originX + rx * unit * scale, y: originY - ry * unit * scale, depth };
+      const time = still ? 0 : elapsed;
+      const rotation = 20 * RAD + time * 0.032 + (still ? 0 : pointerX * 0.045);
+      const tilt = 18 * RAD + (still ? 0 : pointerY * 0.025);
+      const cr = Math.cos(rotation), sr = Math.sin(rotation), ct = Math.cos(tilt), st = Math.sin(tilt);
+      const radius = Math.min(width * 0.31, height * 0.35);
+      const cx = width * (width < 470 ? 0.525 : 0.57), cy = height * 0.46;
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0); ctx.clearRect(0, 0, width, height);
+      function project(point) {
+        const x = point[0] * cr + point[2] * sr;
+        const z = point[2] * cr - point[0] * sr;
+        const y = point[1] * ct - z * st;
+        const depth = z * ct + point[1] * st;
+        return { x: cx + x * radius, y: cy - y * radius, nx: x, ny: y, z: depth };
       }
-      const ring = (points, z, reflected = false) => points.map(([x, y]) => project([x, y, z], reflected));
-      function path(points) {
+      function circle(x, y, r, fill) {
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = fill; ctx.fill();
+      }
+      function visiblePath(points, color, weight, alpha = 1, raised = false) {
         ctx.beginPath();
-        points.forEach((point, i) => i ? ctx.lineTo(point.x, point.y) : ctx.moveTo(point.x, point.y));
-        ctx.closePath();
-      }
-      function polygon(points, fill, edge = null) {
-        path(points); ctx.fillStyle = fill; ctx.fill();
-        if (edge) { ctx.strokeStyle = edge; ctx.lineWidth = 0.6; ctx.stroke(); }
-      }
-      function line(a, b, color, strokeWidth = 0.75) {
-        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
-        ctx.strokeStyle = color; ctx.lineWidth = strokeWidth; ctx.stroke();
-      }
-      const silver = (level, teal = 0) => {
-        const value = Math.max(0, Math.min(1, level));
-        return "rgb(" + [
-          Math.round(21 + 211 * value - teal * 9),
-          Math.round(32 + 205 * value + teal * 7),
-          Math.round(37 + 199 * value + teal * 9),
-        ].join(",") + ")";
-      };
-
-      // A soft contact shadow gives the solid letter a grounded, architectural mass.
-      const floor = project([0, floorY, 0.15]);
-      ctx.save(); ctx.translate(floor.x, floor.y + unit * 0.025); ctx.scale(1, 0.12);
-      const shadow = ctx.createRadialGradient(0, 0, 0, 0, 0, unit * 1.75);
-      shadow.addColorStop(0, "rgba(0,0,0,.65)");
-      shadow.addColorStop(0.55, "rgba(0,0,0,.29)");
-      shadow.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.fillStyle = shadow; ctx.fillRect(-unit * 1.8, -unit * 1.8, unit * 3.6, unit * 3.6);
-      ctx.restore();
-      ctx.save(); ctx.filter = "blur(2.5px)";
-      const reflection = ctx.createLinearGradient(0, floor.y - unit * 0.2, 0, floor.y + unit * 0.85);
-      reflection.addColorStop(0, "rgba(134,168,166,.12)");
-      reflection.addColorStop(0.42, "rgba(76,112,114,.04)");
-      reflection.addColorStop(1, "rgba(31,60,65,0)");
-      polygon(ring(outer, -0.25, true), reflection);
-      ctx.restore();
-
-      const front = ring(inner, -0.37);
-      const shoulder = ring(outer, -0.31);
-      const back = ring(outer, 0.31);
-      const backFace = ring(inner, 0.37);
-      polygon(backFace, "#101c21");
-      const sides = outer.map((p, i) => {
-        const next = (i + 1) % outer.length;
-        const q = outer[next], dx = q[0] - p[0], dy = q[1] - p[1];
-        const length = Math.hypot(dx, dy);
-        const light = Math.max(0.04, Math.min(0.8, 0.25 + (dy / length * -0.3 + dx / length * -0.6) * 0.45));
-        return { i, next, light, depth: (shoulder[i].depth + shoulder[next].depth + back[i].depth + back[next].depth) / 4 };
-      }).sort((a, b) => b.depth - a.depth);
-
-      for (const side of sides) {
-        const { i, next, light } = side;
-        const material = ctx.createLinearGradient(shoulder[i].x, shoulder[i].y, back[next].x + 0.01, back[next].y + 0.01);
-        material.addColorStop(0, silver(light + 0.09, 0.45));
-        material.addColorStop(0.27, silver(light - 0.10, 0.55));
-        material.addColorStop(0.80, silver(light - 0.17, 0.25));
-        material.addColorStop(1, silver(light + 0.02));
-        polygon([shoulder[i], back[i], back[next], shoulder[next]], material, "rgba(131,164,166,.19)");
-        polygon([back[i], backFace[i], backFace[next], back[next]], silver(light * 0.45), "rgba(108,140,141,.12)");
+        let pen = false;
+        for (const point of points) {
+          const visiblePoint = point.z > 0.012 || (raised && point.nx * point.nx + point.ny * point.ny > 1.006);
+          if (!visiblePoint) { pen = false; continue; }
+          if (pen) ctx.lineTo(point.x, point.y); else ctx.moveTo(point.x, point.y);
+          pen = true;
+        }
+        ctx.lineWidth = weight; ctx.strokeStyle = color; ctx.globalAlpha = alpha; ctx.stroke(); ctx.globalAlpha = 1;
       }
 
-      // Each chamfer catches a different strip of the studio environment.
-      for (const side of sides) {
-        const { i, next, light } = side;
-        const edgeLight = Math.min(1, light + 0.44);
-        const bevel = ctx.createLinearGradient(shoulder[i].x, shoulder[i].y, front[next].x + 0.01, front[next].y + 0.01);
-        bevel.addColorStop(0, silver(edgeLight));
-        bevel.addColorStop(0.46, silver(Math.max(0.18, edgeLight - 0.24), 0.25));
-        bevel.addColorStop(1, silver(edgeLight + 0.18));
-        polygon([shoulder[i], front[i], front[next], shoulder[next]], bevel);
-      }
+      // The limb has a slim atmospheric edge, without a large background glow.
+      const atmosphere = ctx.createRadialGradient(cx, cy, radius * 0.98, cx, cy, radius * 1.055);
+      atmosphere.addColorStop(0, "rgba(71,123,130,0)");
+      atmosphere.addColorStop(0.28, "rgba(98,156,158,.12)");
+      atmosphere.addColorStop(1, "rgba(44,93,103,0)");
+      circle(cx, cy, radius * 1.055, atmosphere);
+      const ocean = ctx.createRadialGradient(cx - radius * 0.40, cy - radius * 0.42, radius * 0.03, cx, cy, radius);
+      ocean.addColorStop(0, "#233e43"); ocean.addColorStop(0.38, "#182e34");
+      ocean.addColorStop(0.75, "#0c1b22"); ocean.addColorStop(1, "#060e14");
+      circle(cx, cy, radius, ocean);
 
-      const left = Math.min(...front.map((point) => point.x)), right = Math.max(...front.map((point) => point.x));
-      const top = Math.min(...front.map((point) => point.y)), bottom = Math.max(...front.map((point) => point.y));
-      const metal = ctx.createLinearGradient(left - unit * 0.45, top + unit * 0.15, right + unit * 0.30, bottom * 0.72);
-      metal.addColorStop(0, "#32464d");
-      metal.addColorStop(0.18, "#829798");
-      metal.addColorStop(0.34, "#d1dad7");
-      metal.addColorStop(0.52, "#9baead");
-      metal.addColorStop(0.73, "#435b63");
-      metal.addColorStop(0.88, "#acbfbb");
-      metal.addColorStop(1, "#718b8d");
-      polygon(front, metal);
+      GEOGRAPHY.graticules.forEach(points => visiblePath(points.map(project), "#6b949a", 0.45, 0.095));
 
-      ctx.save(); path(front); ctx.clip();
-      // Brushing belongs to the metal face and never spills beyond its silhouette.
-      for (let y = Math.floor(top); y <= bottom; y += 1.6) {
-        const variation = (Math.sin(y * 1.37) + Math.sin(y * 0.41)) * 0.006;
-        ctx.strokeStyle = "rgba(235,243,236," + (0.024 + variation).toFixed(4) + ")";
-        ctx.lineWidth = 0.4; ctx.beginPath(); ctx.moveTo(left, y); ctx.lineTo(right, y - unit * 0.015); ctx.stroke();
+      // Latitude-adjusted spacing keeps the continent dots evenly distributed.
+      const bins = Array.from({ length: 9 }, () => []);
+      for (const vector of GEOGRAPHY.dots) {
+        const p = project(vector);
+        if (p.z <= 0.015) continue;
+        const light = Math.max(0, Math.min(1, 0.23 + p.z * 0.47 - p.nx * 0.15 + p.ny * 0.17));
+        bins[Math.min(8, Math.floor(light * 9))].push(p);
       }
-      const softbox = ctx.createLinearGradient(left, top, right, bottom);
-      softbox.addColorStop(0, "rgba(225,242,230,0)");
-      softbox.addColorStop(0.33, "rgba(225,242,230,.035)");
-      softbox.addColorStop(0.46, "rgba(241,248,238,.13)");
-      softbox.addColorStop(0.64, "rgba(225,242,230,0)");
-      ctx.fillStyle = softbox; ctx.fillRect(left, top, right - left, bottom - top);
-      ctx.restore();
+      bins.forEach((points, index) => {
+        if (!points.length) return;
+        const level = index / 8;
+        ctx.fillStyle = "rgb(" + [Math.round(54 + level * 140), Math.round(89 + level * 130), Math.round(95 + level * 117)].join(",") + ")";
+        ctx.beginPath();
+        points.forEach(p => {
+          const size = Math.max(0.48, Math.min(1.03, radius * 0.004)) * (0.42 + Math.sqrt(p.z) * 0.58);
+          ctx.moveTo(p.x + size, p.y); ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+        });
+        ctx.fill();
+      });
+      GEOGRAPHY.coasts.forEach(points => visiblePath(points.map(project), "#b5cbc6", 0.48, 0.24));
 
-      for (const { i, next, light } of sides) {
-        line(front[i], front[next], light > 0.25 ? "rgba(233,243,230,.66)" : "rgba(170,212,205,.42)", 0.72);
-        line(shoulder[i], shoulder[next], "rgba(90,153,153,.30)", 0.55);
-      }
-      ctx.globalAlpha = 1;
+      const limb = ctx.createLinearGradient(cx - radius, cy - radius, cx + radius, cy + radius);
+      limb.addColorStop(0, "rgba(178,209,203,.55)");
+      limb.addColorStop(0.45, "rgba(107,157,161,.22)");
+      limb.addColorStop(1, "rgba(56,95,107,.08)");
+      ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.lineWidth = 0.75; ctx.strokeStyle = limb; ctx.stroke();
+
+      // Spherical interpolation makes every connection follow an actual globe route.
+      ROUTES.forEach((points, index) => {
+        const projected = points.map(project);
+        const gold = index === 1;
+        const color = gold ? "#c5ab70" : "#8ecdc7";
+        visiblePath(projected, color, 0.82, gold ? 0.66 : 0.49, true);
+        if (index % 3 !== 0 && !gold) return;
+        const head = Math.floor(((time * 0.082 + index * 0.173 + 0.32) % 1) * (projected.length - 1));
+        const start = Math.max(0, head - 9);
+        for (let i = start; i < head; i++) {
+          const a = projected[i], b = projected[i + 1];
+          const isVisible = p => p.z > 0.012 || p.nx * p.nx + p.ny * p.ny > 1.006;
+          if (!isVisible(a) || !isVisible(b)) continue;
+          const alpha = (i - start + 1) / 10;
+          ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+          ctx.strokeStyle = gold ? "#e6d4a2" : "#c7eee3"; ctx.lineWidth = 1.30;
+          ctx.globalAlpha = alpha * 0.90; ctx.stroke(); ctx.globalAlpha = 1;
+        }
+        const p = projected[head];
+        if (p.z > 0.012 || p.nx * p.nx + p.ny * p.ny > 1.006) circle(p.x, p.y, Math.max(0.8, radius * 0.005), gold ? "#eddeb7" : "#dbf1e6");
+      });
+      HUB_VECTORS.forEach((vector) => {
+        const p = project(vector);
+        if (p.z <= 0.025) return;
+        const opacity = Math.min(1, p.z * 3);
+        ctx.globalAlpha = opacity;
+        circle(p.x, p.y, Math.max(4, radius * 0.019), "rgba(120,202,191,.09)");
+        ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(2.7, radius * 0.012), 0, Math.PI * 2);
+        ctx.lineWidth = 0.6; ctx.strokeStyle = "rgba(152,216,203,.45)"; ctx.stroke();
+        circle(p.x, p.y, Math.max(1.15, radius * 0.006), "#d0e4da");
+        ctx.globalAlpha = 1;
+      });
     }
 
     function available() { return visible && !document.hidden && !disposed; }
-    function wake() {
-      if (!frame && available()) frame = requestAnimationFrame(tick);
-    }
+    function wake() { if (!frame && available()) frame = requestAnimationFrame(tick); }
     function tick(timestamp) {
       frame = 0;
       if (!available()) { lastTime = 0; return; }
-      const delta = lastTime ? Math.min((timestamp - lastTime) / 1000, 0.066) : 1 / 60;
+      const delta = lastTime ? Math.min((timestamp - lastTime) / 1000, 0.06) : 1 / 60;
       lastTime = timestamp;
-      const still = controlsRef.current.reducedMotion;
-      if (still) {
-        elapsed = entranceDuration; pointerX = 0; pointerY = 0; targetX = 0; targetY = 0; scroll = 0; targetScroll = 0; scrollDirty = false;
-      } else {
-        elapsed = Math.min(entranceDuration, elapsed + delta);
-        if (scrollDirty) {
-          const rect = hero.getBoundingClientRect();
-          targetScroll = Math.max(0, Math.min(1, -rect.top / Math.max(1, rect.height)));
-          scrollDirty = false;
-        }
-        const ease = 1 - Math.exp(-delta * 5);
-        pointerX += (targetX - pointerX) * ease; pointerY += (targetY - pointerY) * ease; scroll += (targetScroll - scroll) * ease;
+      if (controlsRef.current.reducedMotion) {
+        pointerX = 0; pointerY = 0; draw(); lastTime = 0; return;
       }
-      draw(); needsDraw = false;
-      const settling = Math.abs(pointerX - targetX) + Math.abs(pointerY - targetY) + Math.abs(scroll - targetScroll) > 0.0008;
-      if (!still && (elapsed < entranceDuration || settling || scrollDirty || needsDraw)) wake();
-      else lastTime = 0;
+      elapsed += delta;
+      const ease = 1 - Math.exp(-delta * 4);
+      pointerX += (targetX - pointerX) * ease; pointerY += (targetY - pointerY) * ease;
+      if (!lastDraw || timestamp - lastDraw >= 1000 / 30) {
+        draw(); lastDraw = timestamp - ((timestamp - lastDraw) % (1000 / 30));
+      }
+      wake();
     }
     function sync() {
       if (disposed) return;
       if (frame) cancelAnimationFrame(frame);
-      frame = 0; lastTime = 0; needsDraw = true;
-      if (controlsRef.current.reducedMotion) elapsed = entranceDuration;
-      wake();
+      frame = 0; lastTime = 0; lastDraw = 0; wake();
     }
     function resize() {
       const bounds = canvas.getBoundingClientRect();
       width = bounds.width; height = bounds.height; ratio = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = Math.max(1, Math.round(width * ratio)); canvas.height = Math.max(1, Math.round(height * ratio));
-      scrollDirty = true; sync();
+      canvas.width = Math.max(1, Math.round(width * ratio)); canvas.height = Math.max(1, Math.round(height * ratio)); sync();
     }
     function move(event) {
       if (controlsRef.current.reducedMotion || event.pointerType === "touch") return;
       const bounds = hero.getBoundingClientRect();
       targetX = Math.max(-1, Math.min(1, (event.clientX - bounds.left) / Math.max(1, bounds.width) * 2 - 1));
       targetY = Math.max(-1, Math.min(1, (event.clientY - bounds.top) / Math.max(1, bounds.height) * 2 - 1));
-      wake();
     }
-    function resetPointer() { targetX = 0; targetY = 0; wake(); }
-    function onScroll() {
-      if (controlsRef.current.reducedMotion) return;
-      scrollDirty = true; wake();
-    }
-    function visibilityChanged() {
-      if (frame) cancelAnimationFrame(frame);
-      frame = 0; lastTime = 0;
-      if (available()) { scrollDirty = true; wake(); }
-    }
+    function resetPointer() { targetX = 0; targetY = 0; }
+    function visibilityChanged() { sync(); }
     const resizeObserver = new ResizeObserver(resize); resizeObserver.observe(canvas);
     const intersectionObserver = "IntersectionObserver" in window ? new IntersectionObserver(([entry]) => {
-      visible = entry.isIntersecting; visibilityChanged();
-    }, { rootMargin: "30px" }) : null;
+      visible = entry.isIntersecting; sync();
+    }, { rootMargin: "0px" }) : null;
     intersectionObserver?.observe(canvas);
     document.addEventListener("visibilitychange", visibilityChanged);
-    window.addEventListener("scroll", onScroll, { passive: true });
     hero.addEventListener("pointermove", move, { passive: true }); hero.addEventListener("pointerleave", resetPointer, { passive: true });
     redrawRef.current = sync; resize();
-
     return () => {
       disposed = true; cancelAnimationFrame(frame);
-      resizeObserver.disconnect(); intersectionObserver?.disconnect();
-      document.removeEventListener("visibilitychange", visibilityChanged); window.removeEventListener("scroll", onScroll);
+      resizeObserver.disconnect(); intersectionObserver?.disconnect(); document.removeEventListener("visibilitychange", visibilityChanged);
       hero.removeEventListener("pointermove", move); hero.removeEventListener("pointerleave", resetPointer); redrawRef.current = null;
     };
   }, []);

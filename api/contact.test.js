@@ -91,6 +91,72 @@ async function run() {
     }
     assert.equal(limitedResponse.statusCode, 429);
     assert.equal(providerCalls.length, 1);
+
+    const serviceCases = [
+      ["fiscal", "Auditoría y asesoría fiscal"],
+      ["crm", "CRM y desarrollo comercial"],
+      ["erp", "ERP y digitalización"],
+      ["comercial", "CRM y desarrollo comercial"],
+      ["jotform", "Jotform y formularios"],
+    ];
+    for (const [index, [context, scope]] of serviceCases.entries()) {
+      const serviceResponse = response();
+      const previousCalls = providerCalls.length;
+      await contactHandler(request("POST", {
+        ...validPayload,
+        alcance: [scope],
+        origen_contexto: context,
+      }, `192.0.2.${10 + index}`), serviceResponse);
+      assert.equal(serviceResponse.statusCode, 200, `${context}: accepted`);
+      assert.equal(providerCalls.length, previousCalls + 1);
+      const serviceForwarded = JSON.parse(providerCalls.at(-1).options.body);
+      assert.equal(serviceForwarded.alcance, scope);
+      assert.equal(serviceForwarded.origen_contexto, context);
+      assert.equal(serviceForwarded.notas, validPayload.notas);
+    }
+
+    const allServiceScopes = [
+      "CRM y desarrollo comercial", "ERP y digitalización", "Automatización e integración",
+      "Auditoría y asesoría fiscal", "Constitución / reestructura", "Jotform y formularios",
+      "IA aplicada", "Asesoría legal corporativa", "Inversión y financiación",
+    ];
+    const multiServiceResponse = response();
+    await contactHandler(request("POST", {
+      ...validPayload,
+      alcance: allServiceScopes,
+      notas: "x".repeat(3000),
+    }, "192.0.2.20"), multiServiceResponse);
+    assert.equal(multiServiceResponse.statusCode, 200);
+    const multiServiceForwarded = JSON.parse(providerCalls.at(-1).options.body);
+    assert.equal(multiServiceForwarded.alcance, allServiceScopes.join(", "));
+    assert.equal(multiServiceForwarded.notas.length, 3000);
+
+    const callsBeforeUnknown = providerCalls.length;
+    const unknownScopeResponse = response();
+    await contactHandler(request("POST", {
+      ...validPayload,
+      alcance: ["Servicio desconocido"],
+    }, "192.0.2.21"), unknownScopeResponse);
+    assert.equal(unknownScopeResponse.statusCode, 400);
+    assert.equal(providerCalls.length, callsBeforeUnknown);
+
+    const filteredScopeResponse = response();
+    await contactHandler(request("POST", {
+      ...validPayload,
+      alcance: ["Auditoría y asesoría fiscal", "Servicio desconocido", "Auditoría y asesoría fiscal"],
+    }, "192.0.2.22"), filteredScopeResponse);
+    assert.equal(filteredScopeResponse.statusCode, 200);
+    assert.equal(JSON.parse(providerCalls.at(-1).options.body).alcance, "Auditoría y asesoría fiscal");
+
+    const callsBeforeConsent = providerCalls.length;
+    const missingConsentResponse = response();
+    await contactHandler(request("POST", {
+      ...validPayload,
+      alcance: ["Auditoría y asesoría fiscal"],
+      consentimiento_privacidad: false,
+    }, "192.0.2.23"), missingConsentResponse);
+    assert.equal(missingConsentResponse.statusCode, 400);
+    assert.equal(providerCalls.length, callsBeforeConsent);
   } finally {
     globalThis.fetch = originalFetch;
   }

@@ -1,6 +1,7 @@
 /* Code-native service demonstrations. No external media, timers or layout dependencies. */
 const MOMENT_TITLES = {
   document: "De un contrato pendiente a una versión revisada y lista para firma",
+  fiscal: "Facturas, contabilidad y declaraciones se contrastan para preparar un informe de revisión fiscal",
   agent: "Fuentes autorizadas se convierten en una respuesta con referencias y revisión",
   flow: "Una solicitud sigue una regla, pasa por aprobación y deja un registro",
   entity: "Socios, reglas y documentos se reúnen en una estructura societaria",
@@ -36,7 +37,7 @@ function PaperLines({ x, y, lengths = [140, 116, 151], color = "#73827d", gap = 
   return <g stroke={color} strokeWidth="2" opacity={opacity}>{lengths.map((length, i) => <path key={i} d={`M${x} ${y + i * gap}h${length}`} />)}</g>;
 }
 
-function DocumentMoment({ stage, ids }) {
+function DocumentMoment({ stage, ids, fiscal = false }) {
   return <>
     <g className="mm-transform" style={{ transform: `translate(${stage > 0 ? -10 : 0}px, ${stage > 0 ? 0 : 8}px)` }}>
       <path d="M151 77 418 54 442 364 175 387Z" fill="#172124" stroke="#3b4749" />
@@ -44,35 +45,37 @@ function DocumentMoment({ stage, ids }) {
       <g filter={`url(#${ids.shadow})`}>
         <rect x="146" y="56" width="278" height="313" rx="3" fill={`url(#${ids.paper})`} />
         <path d="M171 91h31m-31 10h17" stroke="#287b73" strokeWidth="2" />
-        <text x="171" y="138" fill="#172522" fontSize="23" fontWeight="500">Acuerdo comercial</text>
-        <text x="171" y="159" fill="#61716a" fontSize="11" letterSpacing="1.4">BORRADOR / 03</text>
+        <text x="171" y="138" fill="#172522" fontSize="23" fontWeight="500">{fiscal ? "Revisión fiscal" : "Acuerdo comercial"}</text>
+        <text x="171" y="159" fill="#61716a" fontSize="11" letterSpacing="1.4">{fiscal ? "EXPEDIENTE / 03" : "BORRADOR / 03"}</text>
         <path d="M171 177h225" stroke="#a9b6ac" strokeWidth=".8" />
         {[0, 1, 2].map((i) => <g key={i}>
           <rect className="mm-transform" x="166" y={192 + i * 43} width={stage >= 1 && i < 2 ? 232 : 0} height="30" rx="2" fill="#a4c8b5" opacity=".56" />
-          <text x="173" y={211 + i * 43} fill="#34473f" fontSize="12">{["01  Objeto y alcance", "02  Responsables y plazos", "03  Condiciones de cierre"][i]}</text>
+          <text x="173" y={211 + i * 43} fill="#34473f" fontSize="12">{(fiscal ? ["01  Facturas y soporte", "02  Registros contables", "03  Declaraciones"] : ["01  Objeto y alcance", "02  Responsables y plazos", "03  Condiciones de cierre"])[i]}</text>
           <Tick x="379" y={208 + i * 43} active={stage >= (i === 2 ? 2 : 1)} light />
         </g>)}
         <Reveal show={stage >= 3}>
           <rect x="174" y="324" width="94" height="24" rx="2" fill="#d2e1d2" stroke="#49775d" />
           <text x="221" y="340" textAnchor="middle" fill="#315f47" fontSize="10" letterSpacing="1">REVISADO</text>
         </Reveal>
-        <text x="296" y="343" fill="#607367" fontSize="10">{stage >= 3 ? "LISTO PARA FIRMA" : "EN REVISIÓN"}</text>
+        <text x="296" y="343" fill="#607367" fontSize={fiscal ? "8" : "10"}>{stage >= 3 ? fiscal ? "INFORME PREPARADO" : "LISTO PARA FIRMA" : "EN REVISIÓN"}</text>
       </g>
     </g>
     <Trace d="M424 211h42q12 0 12-12v-40" on={stage >= 1} />
     <Reveal show={stage >= 1}>
       <circle cx="478" cy="143" r="6" fill="#83cec8" />
-      <Note x="493" y="148" size={15}>Revisado</Note>
-      <Note x="467" y="174" size={12} muted>Alcance y obligaciones</Note>
+      <Note x="493" y="148" size={15}>{fiscal ? "Contraste" : "Revisado"}</Note>
+      <Note x="467" y="174" size={12} muted>{fiscal ? "Documentos y registros" : "Alcance y obligaciones"}</Note>
     </Reveal>
     <Reveal show={stage >= 2} delay={100}>
       <path d="M425 290h30" stroke="#c5ab70" />
-      <Note x="467" y="285" size={15}>Decisión clara</Note>
-      <Note x="467" y="305" size={12} muted>Comentarios resueltos</Note>
+      <Note x="467" y="285" size={15}>{fiscal ? "Revisión humana" : "Decisión clara"}</Note>
+      <Note x="467" y="305" size={12} muted>{fiscal ? "Diferencias explicadas" : "Comentarios resueltos"}</Note>
     </Reveal>
-    <Note x="146" y="408" size={11} muted>VERSIÓN · REVISIÓN · FIRMA</Note>
+    <Note x="146" y="408" size={11} muted>{fiscal ? "DOCUMENTOS · REVISIÓN · SEGUIMIENTO" : "VERSIÓN · REVISIÓN · FIRMA"}</Note>
   </>;
 }
+
+function FiscalMoment(props) { return <DocumentMoment {...props} fiscal />; }
 
 function AgentMoment({ stage, ids }) {
   const sourceYs = [89, 191, 293];
@@ -299,7 +302,7 @@ export default function ServiceMoment({ mode = "flow", stage = 0, playing = fals
   const seed = React.useId().replace(/:/g, "");
   const ids = { paper: `mm-paper-${seed}`, surface: `mm-surface-${seed}`, shadow: `mm-shadow-${seed}`, title: `mm-title-${seed}` };
   const phase = Math.min(3, Math.max(0, Number(stage) || 0));
-  const Scene = { document: DocumentMoment, agent: AgentMoment, flow: FlowMoment, entity: EntityMoment, architecture: ArchitectureMoment, scenarios: ScenariosMoment, growth: GrowthMoment, intake: IntakeMoment }[mode] || FlowMoment;
+  const Scene = { document: DocumentMoment, fiscal: FiscalMoment, agent: AgentMoment, flow: FlowMoment, entity: EntityMoment, architecture: ArchitectureMoment, scenarios: ScenariosMoment, growth: GrowthMoment, intake: IntakeMoment }[mode] || FlowMoment;
   return <div className="medla-moment" data-mode={mode} data-stage={phase} data-playing={playing} data-reduced={reducedMotion}>
     <style>{`
       .medla-moment{position:relative;width:100%;isolation:isolate}
