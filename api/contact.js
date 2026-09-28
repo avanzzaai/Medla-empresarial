@@ -26,6 +26,7 @@ const ALLOWED_SCOPES = new Set([
   "Posicionamiento, captación y CRM",
   "CRM y desarrollo comercial",
   "ERP y digitalización",
+  "Desarrollo a medida",
   "Auditoría y asesoría fiscal",
   "Jotform y formularios",
   "Aún no lo tengo claro",

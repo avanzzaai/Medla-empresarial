@@ -96,6 +96,7 @@ async function run() {
       ["fiscal", "Auditoría y asesoría fiscal"],
       ["crm", "CRM y desarrollo comercial"],
       ["erp", "ERP y digitalización"],
+      ["desarrollo", "Desarrollo a medida"],
       ["comercial", "CRM y desarrollo comercial"],
       ["jotform", "Jotform y formularios"],
     ];
@@ -116,7 +117,7 @@ async function run() {
     }
 
     const allServiceScopes = [
-      "CRM y desarrollo comercial", "ERP y digitalización", "Automatización e integración",
+      "CRM y desarrollo comercial", "ERP y digitalización", "Desarrollo a medida", "Automatización e integración",
       "Auditoría y asesoría fiscal", "Constitución / reestructura", "Jotform y formularios",
       "IA aplicada", "Asesoría legal corporativa", "Inversión y financiación",
     ];

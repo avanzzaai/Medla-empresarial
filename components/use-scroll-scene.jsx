@@ -70,7 +70,7 @@ export default function useScrollScene({ ref, count = 4, reducedMotion = false, 
         const target = event.target;
         if (target?.closest?.('input,textarea,select,[contenteditable]:not([contenteditable="false"]),[role=textbox],[role=combobox],[role=slider]')) return;
         if (["ArrowUp", "ArrowDown", "Home", "End"].includes(event.key) && target?.closest?.("[role=tab],[role=tablist]")) return;
-        if ([" ", "Spacebar"].includes(event.key) && target?.closest?.("button,[role=button],[role=tab]")) return;
+        if ([" ", "Spacebar"].includes(event.key) && target?.closest?.("button,summary,[role=button],[role=tab]")) return;
       }
       intentAt.current = performance.now();
     };

@@ -107,6 +107,7 @@ function CtPaths({ active, onPick }) {
 const ALCANCE_OPTIONS = [
   { value: "CRM y desarrollo comercial", label: "CRM y desarrollo comercial" },
   { value: "ERP y digitalización", label: "ERP y digitalización" },
+  { value: "Desarrollo a medida", label: "Desarrollo a medida" },
   { value: "Automatización e integración", label: "Automatizaciones" },
   { value: "Auditoría y asesoría fiscal", label: "Auditoría y asesoría fiscal" },
   { value: "Constitución / reestructura", label: "Establecimiento de empresas" },
@@ -157,6 +158,11 @@ const CONTEXT_PRESETS = {
     label: "ERP y digitalización",
     alcance: ["ERP y digitalización"],
     notas: "Punto de partida: queremos implantar o mejorar un ERP y conectar la información de compras, ventas, finanzas y operaciones.",
+  },
+  desarrollo: {
+    label: "Desarrollo a medida",
+    alcance: ["Desarrollo a medida"],
+    notas: "Punto de partida: necesitamos una aplicación, portal o integración adaptada a nuestra operativa, con los accesos y funciones que requiere el equipo.",
   },
   automatizacion: {
     label: "Automatizaciones",
