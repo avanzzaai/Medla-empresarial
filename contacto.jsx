@@ -40,21 +40,9 @@ function CtHero({ context }) {
           <p className="lead">
             Qué está pasando, quién interviene y cuándo necesitas avanzar. Con ese punto de partida podremos decirte cómo ayudarte.
           </p>
-          <div className="contacto-pulse">
-            <span className="dot"></span> Revisión del contexto del proyecto
-          </div>
+          <a className="contacto-hero-link" href="#form">Preparar el primer mensaje <span aria-hidden="true">↘</span></a>
         </div>
-        <aside className="ct-brief" aria-label="Vista previa del contexto que recibirá MEDLA">
-          <header><span>MEDLA / CONTEXTO INICIAL</span><b>01</b></header>
-          <div className="ct-brief-status"><i></i><span>{context ? "Tema seleccionado" : "Preparado para completar"}</span></div>
-          <h2>{context?.label || "Describe tu proyecto"}</h2>
-          <dl>
-            <div><dt>Tema seleccionado</dt><dd>{context ? "Conservado desde la página anterior" : "Empiezas por el proyecto, sin elegir una capacidad"}</dd></div>
-            <div><dt>Revisión de encaje</dt><dd>Decisión · consecuencia · responsables</dd></div>
-            <div><dt>Respuesta</dt><dd>Encaje · información pendiente · reunión</dd></div>
-          </dl>
-          <footer><span>Datos tratados con consentimiento</span><i>Madrid / ES</i></footer>
-        </aside>
+        <aside className="contacto-hero-note"><span>El primer paso</span><p>No necesitas tenerlo todo definido. Una buena descripción del problema es suficiente para empezar.</p>{context && <small>Vienes de: {context.label}</small>}</aside>
       </div>
     </section>
   );
@@ -93,8 +81,9 @@ function CtPaths({ active, onPick }) {
   return (
     <section className="contacto-paths">
       <div className="container">
-        <div className="paths-grid">
-          {PATHS.map((p) => (
+        <p className="contacto-paths-label">¿Qué conversación quieres abrir?</p>
+        <div className="paths-grid" role="group" aria-label="Tipo de conversación">
+          {PATHS.map((p, index) => (
             <button
               key={p.id}
               type="button"
@@ -102,7 +91,7 @@ function CtPaths({ active, onPick }) {
               aria-pressed={active === p.id}
               onClick={() => onPick(p.id)}
             >
-              <div className="path-icon">{p.icon}</div>
+              <span className="path-number">0{index + 1}</span>
               <h3>{p.title}</h3>
               <p>{p.desc}</p>
               <div className="path-meta">{p.meta}</div>
@@ -241,6 +230,7 @@ function CtForm({ pathId }) {
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState(null);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const [briefOpen, setBriefOpen] = useState(false);
 
   useEffect(() => {
     if (previousStepRef.current === step) return;
@@ -376,9 +366,9 @@ function CtForm({ pathId }) {
         <form className="form-card" onSubmit={handleSubmit}>
           <aside className="form-side">
             <div className="form-side-top">
-              <span className="eyebrow">— {stepTitle}</span>
-              <h3>Empecemos por la decisión y el resultado esperado.</h3>
-              <p>Describe el objetivo y la consecuencia de no actuar. Después indícanos cómo responderte; el resto es opcional.</p>
+              <span className="eyebrow">{stepTitle}</span>
+              <h3>Tu proyecto empieza a tomar forma.</h3>
+              <p>El resumen se completa con lo que nos cuentes. Puedes revisarlo antes de enviar.</p>
 
               <div className="form-side-steps">
                 {stepHints.map((h, i) => (
@@ -387,24 +377,26 @@ function CtForm({ pathId }) {
                     className={`form-side-step ${i < step || sent ? "done" : ""} ${i === step && !sent ? "current" : ""}`}
                     aria-current={i === step && !sent ? "step" : undefined}
                   >
-                    <div className="step-dot">{i < step || sent ? "✓" : i + 1}</div>
+                    <div className="step-dot">{i < step || sent ? <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m4 10 4 4 8-8" /></svg> : i + 1}</div>
                     <div>{h}</div>
                   </div>
                 ))}
               </div>
 
               {!sent && (
-                <section className="form-live-brief" aria-label="Resumen del contexto en preparación">
-                  <header><span>CONTEXTO / EN PREPARACIÓN</span><b>0{step + 1}</b></header>
-                  <div className="form-live-brief__status"><i></i>{problemReady ? "Punto de partida descrito" : "Esperando el punto de partida"}</div>
-                  <dl>
-                    <div className="form-live-brief__issue"><dt>Proyecto</dt><dd>{issuePreview}</dd></div>
-                    <div><dt>Contacto</dt><dd>{data.nombre.trim() || "Sin completar"}</dd></div>
-                    <div><dt>Áreas</dt><dd>{selectedScopeLabels.length ? selectedScopeLabels.join(" · ") : "Sin clasificar"}</dd></div>
-                    <div><dt>Momento</dt><dd>{selectedStageLabel}</dd></div>
-                    <div><dt>Presupuesto</dt><dd>{selectedBudget.label}</dd></div>
-                  </dl>
-                  <footer><span>{selectedContext ? "Contexto heredado" : "Contexto editable"}</span><i>{String(step + 1).padStart(2, "0")} / 03</i></footer>
+                <section className={`form-live-brief${briefOpen ? " is-expanded" : ""}`} aria-label="Resumen del contexto en preparación">
+                  <header><span>MEDLA / TU PRIMER MENSAJE</span><b>01</b></header>
+                  <div className="form-live-brief__status" role="status"><i />{problemReady && contactReady ? "Proyecto y contacto preparados" : problemReady ? "Punto de partida descrito" : "Esperando el punto de partida"}</div>
+                  <button className="brief-mobile-toggle" type="button" aria-expanded={briefOpen} aria-controls="contact-brief-document" onClick={() => setBriefOpen(value => !value)}>{briefOpen ? "Ocultar resumen" : "Ver mi resumen"}<span aria-hidden="true">{briefOpen ? "−" : "+"}</span></button>
+                  <div id="contact-brief-document" className="brief-document-body">
+                    <dl>
+                      <div className={`brief-document-row form-live-brief__issue${problemReady ? " is-filled" : ""}`}><dt><span>01 / El proyecto</span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m4 10 4 4 8-8" /></svg></dt><dd>{issuePreview}</dd></div>
+                      <div className={`brief-document-row${contactReady ? " is-filled" : ""}`}><dt><span>02 / Quién nos escribe</span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m4 10 4 4 8-8" /></svg></dt><dd>{data.nombre.trim() || "Tu nombre aparecerá aquí."}{data.empresa.trim() && <span>{data.empresa.trim()}{data.cargo.trim() ? ` · ${data.cargo.trim()}` : ""}</span>}{data.email.trim() && <span>{data.email.trim()}</span>}</dd></div>
+                      <div className={`brief-document-row${selectedScopeLabels.length || data.etapa || data.presupuestoIdx ? " is-filled" : ""}`}><dt><span>03 / Contexto adicional</span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m4 10 4 4 8-8" /></svg></dt><dd>{selectedScopeLabels.length ? selectedScopeLabels.join(" · ") : "Áreas por definir"}{data.etapa && <span>{selectedStageLabel}</span>}<span>Presupuesto: {selectedBudget.label}</span></dd></div>
+                    </dl>
+                    <div className={`brief-consent${privacyAccepted ? " is-accepted" : ""}`}><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m4 10 4 4 8-8" /></svg><span>{privacyAccepted ? "Consentimiento de privacidad marcado" : "Consentimiento pendiente de tu confirmación"}</span></div>
+                    <footer><span>Borrador · todavía no enviado</span><i>{String(step + 1).padStart(2, "0")} / 03</i></footer>
+                  </div>
                 </section>
               )}
             </div>
@@ -665,41 +657,6 @@ function CtInfo() {
           </div>
 
           <div className="map-card">
-            <div className="map-visual">
-              <svg viewBox="0 0 400 400" preserveAspectRatio="xMidYMid slice">
-                <defs>
-                  <pattern id="mapGrid" width="20" height="20" patternUnits="userSpaceOnUse">
-                    <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#1A1A2E" strokeOpacity="0.04" strokeWidth="0.5" />
-                  </pattern>
-                </defs>
-                <rect width="400" height="400" fill="url(#mapGrid)" />
-                {/* roads */}
-                <path d="M 0 180 L 400 160" stroke="#C9A84C" strokeOpacity="0.15" strokeWidth="8" />
-                <path d="M 0 180 L 400 160" stroke="#C9A84C" strokeOpacity="0.5" strokeWidth="1.5" strokeDasharray="4 4" />
-                <path d="M 220 0 L 180 400" stroke="#C9A84C" strokeOpacity="0.15" strokeWidth="6" />
-                <path d="M 220 0 L 180 400" stroke="#C9A84C" strokeOpacity="0.45" strokeWidth="1.5" strokeDasharray="4 4" />
-                <path d="M 40 60 Q 200 200 380 340" stroke="#1A1A2E" strokeOpacity="0.15" strokeWidth="6" fill="none" />
-                <path d="M 40 60 Q 200 200 380 340" stroke="#1A1A2E" strokeOpacity="0.4" strokeWidth="1" fill="none" strokeDasharray="3 4" />
-                {/* blocks */}
-                <rect x="60" y="50" width="60" height="40" fill="#1A1A2E" opacity="0.05" />
-                <rect x="130" y="60" width="40" height="50" fill="#1A1A2E" opacity="0.07" />
-                <rect x="250" y="40" width="80" height="60" fill="#1A1A2E" opacity="0.06" />
-                <rect x="50" y="230" width="90" height="70" fill="#1A1A2E" opacity="0.08" />
-                <rect x="220" y="220" width="60" height="60" fill="#1A1A2E" opacity="0.07" />
-                <rect x="290" y="260" width="70" height="50" fill="#1A1A2E" opacity="0.05" />
-                <rect x="60" y="320" width="50" height="50" fill="#1A1A2E" opacity="0.06" />
-                <rect x="280" y="100" width="40" height="60" fill="#1A1A2E" opacity="0.06" />
-                {/* pin */}
-                <g transform="translate(200, 175)">
-                  <circle className="map-pin-pulse" r="26" fill="#C9A84C" opacity="0.15" />
-                  <circle r="14" fill="#C9A84C" opacity="0.3" />
-                  <g transform="translate(0, -6)">
-                    <path d="M 0 -14 C -8 -14 -12 -8 -12 -2 C -12 6 0 18 0 18 C 0 18 12 6 12 -2 C 12 -8 8 -14 0 -14 Z" fill="#1A1A2E" />
-                    <circle cy="-2" r="4" fill="#C9A84C" />
-                  </g>
-                </g>
-              </svg>
-            </div>
             <div className="map-card-body">
               <span className="lbl">Base operativa</span>
               <span className="addr">Madrid, España</span>
@@ -745,9 +702,9 @@ function CtFAQ() {
   return (
     <section className="contacto-faq">
       <div className="container">
-        <div className="section-head" style={{ textAlign: "center", margin: "0 auto" }}>
-          <span className="eyebrow" style={{ justifyContent: "center" }}>— Preguntas frecuentes</span>
-          <h2 style={{ margin: "12px auto 0" }}>Antes de escribirnos, quizá <em>ya tengas la respuesta</em>.</h2>
+        <div className="section-head">
+          <span className="eyebrow">Antes de empezar</span>
+          <h2>Preguntas que merecen <em>una respuesta clara.</em></h2>
         </div>
         <div className="faq-grid">
           {FAQS.map((f, i) => (

@@ -47,6 +47,46 @@ function useReducedMotion() {
   return reduced;
 }
 
+function ProjectBlueprint({ stage }) {
+  const titles = ["Qué hay que resolver", "Qué vamos a entregar", "Qué hemos comprobado", "Quién toma el control"];
+  const lines = [
+    ["Un proveedor, varias áreas", "Identificar la decisión", "Definir quién participa"],
+    ["Alcance acordado", "Responsables asignados", "Criterios de aceptación"],
+    ["Recorrido de alta probado", "Excepciones revisadas", "Validación del cliente"],
+    ["Responsable interno", "Guía de operación", "Plan de mantenimiento"],
+  ];
+  return <svg className={`how-blueprint phase-${stage}`} viewBox="0 0 620 330" aria-hidden="true">
+    <defs>
+      <linearGradient id="blueprint-paper" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#253d40" /><stop offset=".55" stopColor="#132427" /><stop offset="1" stopColor="#0c1517" /></linearGradient>
+      <linearGradient id="blueprint-flow"><stop stopColor="#83cec8" stopOpacity=".05" /><stop offset="1" stopColor="#83cec8" /></linearGradient>
+    </defs>
+    {[80,165,250].map((y,index) => <g key={y} className="how-blueprint__input" style={{ "--lane": index }}>
+      <text x="22" y={y - 15}>{["COMPRAS", "LEGAL", "SISTEMAS"][index]}</text>
+      <circle cx="30" cy={y + 6} r="4" />
+      <path d={`M42 ${y + 6} C150 ${y + 6},155 169,245 169`} />
+      <path className="how-blueprint__signal" d={`M42 ${y + 6} C150 ${y + 6},155 169,245 169`} />
+    </g>)}
+    <g className="how-blueprint__document" style={{ transform: `translate(${stage === 3 ? 12 : 0}px,0) rotate(${stage === 0 ? -5 : stage === 1 ? -2 : 0}deg)` }}>
+      <path className="how-blueprint__shadow" d="M240 35H490L524 69V293H240Z" transform="translate(8 9)" />
+      <path className="how-blueprint__paper" d="M240 35H490L524 69V293H240Z" />
+      <path className="how-blueprint__fold" d="M490 35V69H524" />
+      <text className="how-blueprint__number" x="266" y="71">MEDLA / 0{stage + 1}</text>
+      <g key={stage} className="how-blueprint__contents">
+        <text className="how-blueprint__title" x="266" y="107">{titles[stage]}</text>
+        <path className="how-blueprint__rule" d="M266 126H497" />
+        {lines[stage].map((line,index) => <g key={line}>
+          <circle className={stage > 1 ? "is-checked" : ""} cx="273" cy={153 + index * 37} r="7" />
+          {stage > 1 && <path className="how-blueprint__check" d={`M269 ${153 + index * 37}l3 3 5-6`} />}
+          <text x="292" y={158 + index * 37}>{line}</text>
+        </g>)}
+        <path className="how-blueprint__rule" d="M266 252H497" />
+        <text className="how-blueprint__stamp" x="266" y="275">{stage === 3 ? "EN MANOS DEL EQUIPO" : "UNA VERSIÓN COMPARTIDA"}</text>
+      </g>
+    </g>
+    <g className="how-blueprint__handoff" style={{ opacity: stage === 3 ? 1 : 0 }}><path d="M548 162h42m-8-8 8 8-8 8" /><circle cx="582" cy="208" r="14" /><path d="m575 207 5 5 9-10" /></g>
+  </svg>;
+}
+
 function GovernanceBoard() {
   const [active, setActive] = useState(0);
   const reducedMotion = useReducedMotion();
@@ -91,7 +131,7 @@ function GovernanceBoard() {
       }
       setActive(next);
       if (next === PROJECT_RHYTHM.length - 1) setRunning(false);
-    }, 1900);
+    }, 3400);
     return () => window.clearTimeout(timer);
   }, [active, running, visible, reducedMotion]);
 
@@ -124,14 +164,13 @@ function GovernanceBoard() {
   const buttonLabel = reducedMotion
     ? finished ? "Volver al inicio" : "Siguiente fase"
     : running ? "Pausar" : finished ? "Repetir" : "Continuar";
-  const status = running ? "SECUENCIA EN CURSO" : finished ? "RECORRIDO COMPLETO" : "SECUENCIA EN PAUSA";
-
-  return <div ref={boardRef} className="how-board" aria-label="Secuencia interactiva del gobierno de un proyecto">
+  return <div ref={boardRef} className={`how-board ${running && visible && !reducedMotion ? "is-running" : ""}`} aria-label="Secuencia interactiva del gobierno de un proyecto">
     <header className="how-board__topbar">
-      <div><i />PROYECTO / SEMANA 03</div>
+      <div><i />UN PROYECTO, DE PRINCIPIO A FIN</div>
       <button type="button" onClick={toggleSequence} aria-label={`${buttonLabel} la secuencia del proyecto`}><i className={running ? "is-running" : ""} />{buttonLabel}</button>
     </header>
-    <div className="how-board__summary"><span>PROYECTO DEMOSTRATIVO</span><h2>Implantar el alta digital de proveedores.</h2><div aria-live="polite"><b>{status}</b><small>Un recorrido · cuatro cierres</small></div></div>
+    <div className="how-board__summary"><span>EJEMPLO ILUSTRATIVO</span><h2>Un alta de proveedor.<br />Tres áreas. Un mismo acuerdo.</h2></div>
+    <ProjectBlueprint stage={active} />
     <div className="how-board__journey">
       <div className="how-board__route" aria-hidden="true" style={{ "--progress": active / (PROJECT_RHYTHM.length - 1) }}><i /></div>
       <div className="how-board__tabs" role="tablist" aria-label="Recorrido del proyecto">
@@ -140,9 +179,8 @@ function GovernanceBoard() {
     </div>
     <article id="rhythm-panel" role="tabpanel" aria-labelledby={`rhythm-tab-${item.id}`} key={item.id}>
       <div className="how-board__copy"><span>{item.code} / {item.label}</span><h3>{item.title}</h3><p>{item.text}</p></div>
-      <div className="how-board__output"><span>SALIDA ACTIVA</span><strong><i />{item.output}</strong><dl>{item.facts.map(([label,value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl></div>
     </article>
-    <footer><span>Mandato común</span><i /> <span>Decisiones registradas</span><i /> <strong>Control transferido</strong></footer>
+    <footer><span>Al cerrar esta fase</span><i /><strong>{item.output}</strong></footer>
   </div>;
 }
 

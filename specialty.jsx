@@ -1,3 +1,5 @@
+import ServiceMoment from "./components/service-moment.jsx";
+
 const { useEffect, useRef, useState } = React;
 
 const SPECIALTIES = {
@@ -572,7 +574,7 @@ function SystemScene({ scene }) {
         setActive(last);
         setRunning(false);
       } else setActive((value) => value + 1);
-    }, 1800);
+    }, 2700);
     return () => window.clearTimeout(timer);
   }, [active, available, last, reducedMotion, running]);
 
@@ -612,8 +614,8 @@ function SystemScene({ scene }) {
         <span>{scene.code}</span>
         <button type="button" onClick={toggleSequence}><i aria-hidden="true" /> {controlLabel}</button>
       </div>
+      <ServiceMoment mode={scene.mode} stage={active} playing={running && available} reducedMotion={reducedMotion} />
       <div className="sp-scene__journey">
-        <div className="sp-scene__route" aria-hidden="true"><i style={{ "--progress": `${active / (scene.nodes.length - 1)}` }} /></div>
         <div className="sp-scene__stages" role="tablist" aria-label="Secuencia de trabajo">
           {scene.nodes.map((node, index) => (
             <button
@@ -630,24 +632,16 @@ function SystemScene({ scene }) {
               onKeyDown={(event) => move(event, index)}
             >
               <span>{String(index + 1).padStart(2, "0")}</span>
-              <i className="sp-scene__node-icon" aria-hidden="true">
-                <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.15" strokeLinecap="round" strokeLinejoin="round">
-                  {index === 0 && <><path d="M9 5h10l5 5v17H9zM19 5v6h5M13 16h7M13 20h5" /><path d="M5 10v17h3" opacity=".45" /></>}
-                  {index === 1 && <><path d="m16 5 11 11-11 11L5 16z" /><path d="m11 16 3 3 7-7" /></>}
-                  {index === 2 && <><path d="M5 9h9v14H5zM23 5v22M19 9l4-4 4 4M14 16h9" /><circle cx="23" cy="25" r="2" fill="currentColor" stroke="none" /></>}
-                  {index === 3 && <><rect x="6" y="5" width="20" height="22" rx="2" /><path d="m10 11 1.5 1.5L14 10M17 12h5m-12 6 1.5 1.5L14 17M17 19h5" /></>}
-                </svg>
-              </i>
               <b>{node.label}</b>
             </button>
           ))}
         </div>
       </div>
       <div id="scene-detail" className="sp-scene__detail" role="tabpanel" aria-labelledby={`scene-tab-${active}`}>
-        <div><span>{String(active + 1).padStart(2, "0")} / {scene.nodes[active].label}</span><strong>{scene.mark}</strong></div>
+        <div><span>{String(active + 1).padStart(2, "0")} / {scene.nodes[active].label}</span></div>
         <p key={scene.nodes[active].label}>{scene.nodes[active].detail}</p>
       </div>
-      <p className="sp-scene__caption">{scene.caption}</p>
+      <p className="sp-scene__caption">Ejemplo ilustrativo. {scene.caption}</p>
     </div>
   );
 }

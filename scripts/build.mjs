@@ -7,7 +7,7 @@ const javascript = [
   { entryPoints: ["servicios-entry.jsx"], outfile: "servicios.js", bundle: true },
   { entryPoints: ["nosotros.jsx"], outfile: "nosotros.js" },
   { entryPoints: ["blog.jsx"], outfile: "blog.js" },
-  { entryPoints: ["specialty.jsx"], outfile: "specialty.js" },
+  { entryPoints: ["specialty.jsx"], outfile: "specialty.js", bundle: true },
 ];
 
 const styles = [

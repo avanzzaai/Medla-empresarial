@@ -1,7 +1,7 @@
 const { useEffect, useRef } = React;
 
-/* A small, purpose-built renderer. The three frames and their reflections are
-   actual projected geometry; the light travelling through them is one path. */
+/* Three independently formed metal ribbons find the same direction.
+   Geometry is fixed; the camera and reflected studio light move very slowly. */
 export default function MedlaAperture({ paused = false, reducedMotion = false }) {
   const canvasRef = useRef(null);
   const controlsRef = useRef({ paused, reducedMotion });
@@ -14,252 +14,196 @@ export default function MedlaAperture({ paused = false, reducedMotion = false })
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const context = canvas?.getContext("2d", { alpha: true });
-    if (!context) return;
+    const ctx = canvas?.getContext("2d", { alpha: true });
+    if (!ctx) return;
 
-    let width = 0;
-    let height = 0;
-    let ratio = 1;
-    let frame = 0;
-    let visible = true;
-    let lastTime = 0;
-    let elapsed = 3.2;
-    let pointerX = 0;
-    let pointerY = 0;
-    let targetX = 0;
-    let targetY = 0;
-    let disposed = false;
-    const ground = -1.72;
-    const distance = 7.5;
+    let width = 0, height = 0, ratio = 1, frame = 0;
+    let visible = true, disposed = false, lastTime = 0, lastDraw = 0;
+    let elapsed = 4, pointerX = 0, pointerY = 0, targetX = 0, targetY = 0;
+    const ground = -1.76;
+    const distance = 8;
+    const samples = 100;
+    const starts = [
+      [[-1.40, -1.19, 0.13], [-1.90, -0.10, -0.27], [-0.62, -0.61, -0.04], [-0.30, 0.12, 0]],
+      [[-0.40, -1.67, 0.27], [0.12, -1.08, 0.49], [-0.32, -0.61, 0.07], [0, 0.12, 0]],
+      [[1.24, -1.20, 0.03], [1.87, -0.43, -0.18], [-0.02, -0.61, 0.03], [0.30, 0.12, 0]],
+    ];
 
-    const frames = [-1.06, 0.18, 1.42].map((z, index) => ({
-      z,
-      index,
-      outer: [[-1.13, 1.74], [1.13, 1.74], [1.13, ground], [-1.13, ground]],
-      inner: [[-0.965, 1.575], [0.965, 1.575], [0.965, ground + 0.165], [-0.965, ground + 0.165]],
-    }));
+    const add = (a, b, amount = 1) => a.map((value, i) => value + b[i] * amount);
+    const subtract = (a, b) => a.map((value, i) => value - b[i]);
+    const normalize = (v) => { const length = Math.hypot(...v) || 1; return v.map((value) => value / length); };
+    const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+    function bezier(points, t) {
+      const s = 1 - t;
+      return [0, 1, 2].map((i) => s * s * s * points[0][i] + 3 * s * s * t * points[1][i] + 3 * s * t * t * points[2][i] + t * t * t * points[3][i]);
+    }
+    const spine = [[0, 0.12, 0], [0.32, 0.85, -0.07], [-0.12, 1.18, 0.19], [0.48, 1.78, 0.08]];
+    function outflow(lane, t) {
+      const point = bezier(spine, t);
+      const tangent = subtract(bezier(spine, Math.min(1, t + 0.0001)), bezier(spine, Math.max(0, t - 0.0001)));
+      const sideways = normalize([tangent[1], -tangent[0], 0]);
+      return add(point, sideways, (lane - 1) * 0.355);
+    }
+    starts.forEach((points, lane) => {
+      points[3] = outflow(lane, 0);
+      const direction = normalize(subtract(outflow(lane, 0.001), points[3]));
+      points[2] = add(points[3], direction, -0.80);
+    });
+    function center(lane, t) {
+      if (t < 0.53) return bezier(starts[lane], t / 0.53);
+      return outflow(lane, (t - 0.53) / 0.47);
+    }
 
-    function draw(time) {
+    // Rolled normals give each approach a different form. The final sections align.
+    const ribbons = starts.map((_, lane) => {
+      const rings = [];
+      for (let step = 0; step <= samples; step++) {
+        const t = step / samples;
+        const point = center(lane, t);
+        const tangent = normalize(subtract(center(lane, Math.min(1, t + 0.0001)), center(lane, Math.max(0, t - 0.0001))));
+        const flatSide = normalize([tangent[1], -tangent[0], 0]);
+        const roll = [-0.75, 0.57, 0.90][lane] * Math.pow(1 - t, 1.7) + Math.sin(t * Math.PI) * 0.12;
+        const side = normalize(add(flatSide.map((value) => value * Math.cos(roll)), [0, 0, 1], Math.sin(roll)));
+        let normal = normalize(cross(tangent, side));
+        if (normal[2] > 0) normal = normal.map((value) => -value);
+        const ribbonWidth = 0.265 + Math.sin(t * Math.PI) * 0.035;
+        const half = ribbonWidth / 2;
+        const left = add(point, side, -half), right = add(point, side, half);
+        rings.push({ t, point, normal, side, left: add(left, normal, 0.023), right: add(right, normal, 0.023), lowerLeft: add(left, normal, -0.023), lowerRight: add(right, normal, -0.023) });
+      }
+      return { lane, rings };
+    });
+
+    function draw() {
       if (!width || !height || disposed) return;
-      const staticScene = controlsRef.current.reducedMotion;
-      const phase = staticScene ? 3.2 : elapsed;
-      const yaw = -0.29 + pointerX * 0.032 + (staticScene ? 0 : Math.sin(phase * 0.14) * 0.011);
-      const pitch = 0.13 + pointerY * 0.016;
-      const cy = Math.cos(yaw);
-      const sy = Math.sin(yaw);
-      const cp = Math.cos(pitch);
-      const sp = Math.sin(pitch);
-      const unit = Math.min(width / 4.52, height / 4.87);
-      const originX = width * 0.535;
-      const originY = height * 0.443;
-      const ctx = context;
+      const still = controlsRef.current.reducedMotion;
+      const phase = still ? 4 : elapsed;
+      const yaw = -0.12 + pointerX * 0.065 + (still ? 0 : Math.sin(phase * 0.12) * 0.035);
+      const pitch = 0.085 + pointerY * 0.025;
+      const cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
+      const unit = Math.min(width / 4.42, height / 4.67);
+      const originX = width * 0.54, originY = height * 0.46;
       ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
       ctx.clearRect(0, 0, width, height);
 
-      function project(x, y, z, reflect = false) {
-        if (reflect) y = ground * 2 - y;
-        const rx = x * cy + z * sy;
-        const rz = z * cy - x * sy;
-        const ry = y * cp - rz * sp;
-        const depth = rz * cp + y * sp;
-        const perspective = distance / (distance + depth);
-        return { x: originX + rx * unit * perspective, y: originY - ry * unit * perspective, depth };
+      function project(point, reflected = false) {
+        const [x, initialY, z] = point;
+        const y = reflected ? 2 * ground - initialY : initialY;
+        const rx = x * cy + z * sy, rz = z * cy - x * sy;
+        const ry = y * cp - rz * sp, depth = rz * cp + y * sp;
+        const scale = distance / (distance + depth);
+        return { x: originX + rx * unit * scale, y: originY - ry * unit * scale, depth };
       }
-
-      function polygon(vertices, fill, alpha = 1, stroke = null) {
+      function polygon(points, fill, seam = false) {
         ctx.beginPath();
-        vertices.forEach((point, index) => index ? ctx.lineTo(point.x, point.y) : ctx.moveTo(point.x, point.y));
-        ctx.closePath();
-        ctx.globalAlpha = alpha;
-        ctx.fillStyle = fill;
-        ctx.fill();
-        if (stroke) {
-          ctx.strokeStyle = stroke;
-          ctx.lineWidth = 0.65;
-          ctx.stroke();
-        }
-        ctx.globalAlpha = 1;
+        points.forEach((point, i) => i ? ctx.lineTo(point.x, point.y) : ctx.moveTo(point.x, point.y));
+        ctx.closePath(); ctx.fillStyle = fill; ctx.fill();
+        if (seam) { ctx.strokeStyle = fill; ctx.lineWidth = 0.42; ctx.stroke(); }
       }
-
-      function line(points, color, lineWidth = 1, alpha = 1) {
-        if (!points.length) return;
-        ctx.beginPath();
-        points.forEach((point, index) => index ? ctx.lineTo(point.x, point.y) : ctx.moveTo(point.x, point.y));
-        ctx.strokeStyle = color;
-        ctx.globalAlpha = alpha;
-        ctx.lineWidth = lineWidth;
-        ctx.lineJoin = "round";
-        ctx.lineCap = "round";
-        ctx.stroke();
-        ctx.globalAlpha = 1;
+      function line(a, b, color, strokeWidth = 0.75, opacity = 1) {
+        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+        ctx.strokeStyle = color; ctx.lineWidth = strokeWidth; ctx.globalAlpha = opacity; ctx.stroke(); ctx.globalAlpha = 1;
       }
+      const tint = (light, lane) => {
+        const mix = Math.max(0, Math.min(1, light));
+        const lower = lane === 1 ? [24, 48, 52] : [22, 38, 43];
+        const upper = lane === 1 ? [173, 214, 205] : [223, 234, 230];
+        return "rgb(" + lower.map((value, i) => Math.round(value + (upper[i] - value) * mix)).join(",") + ")";
+      };
 
-      // A lit ground surface anchors the object without a visible container.
-      const floorCenter = project(0, ground, 0.5);
-      ctx.save();
-      ctx.translate(floorCenter.x, floorCenter.y);
-      ctx.scale(1, 0.25);
-      const pool = ctx.createRadialGradient(0, 0, 0, 0, 0, unit * 2.7);
-      pool.addColorStop(0, "rgba(88,147,146,0.115)");
-      pool.addColorStop(0.36, "rgba(50,95,98,0.057)");
-      pool.addColorStop(1, "rgba(10,17,20,0)");
-      ctx.fillStyle = pool;
-      ctx.fillRect(-unit * 2.8, -unit * 2.8, unit * 5.6, unit * 5.6);
+      // A quiet ground reflection gives the confluence weight and scale.
+      const floor = project([0, ground, 0]);
+      ctx.save(); ctx.translate(floor.x, floor.y); ctx.scale(1, 0.20);
+      const pool = ctx.createRadialGradient(0, 0, unit * 0.1, 0, 0, unit * 2.15);
+      pool.addColorStop(0, "rgba(81,130,132,0.095)"); pool.addColorStop(0.6, "rgba(33,66,72,0.035)"); pool.addColorStop(1, "rgba(8,12,14,0)");
+      ctx.fillStyle = pool; ctx.fillRect(-unit * 2.2, -unit * 2.2, unit * 4.4, unit * 4.4); ctx.restore();
+      ctx.save(); ctx.filter = "blur(2px)";
+      const reflection = ctx.createLinearGradient(0, floor.y - unit * 0.2, 0, floor.y + unit * 0.8);
+      reflection.addColorStop(0, "rgba(135,187,184,0.095)"); reflection.addColorStop(0.6, "rgba(75,122,123,0.025)"); reflection.addColorStop(1, "rgba(45,83,88,0)");
+      ribbons.forEach(({ rings }) => {
+        const contour = [...rings.map((ring) => project(ring.left, true)), ...rings.slice().reverse().map((ring) => project(ring.right, true))];
+        polygon(contour, reflection);
+      });
       ctx.restore();
 
-      const surfaces = [];
-      frames.forEach(({ z, outer, inner, index }) => {
-        const front = z - 0.125;
-        const back = z + 0.125;
-        const push = (points, type, edge) => {
-          const projected = points.map((point) => project(...point));
-          surfaces.push({ points, projected, type, edge, index, depth: projected.reduce((sum, p) => sum + p.depth, 0) / projected.length });
-        };
-        for (let edge = 0; edge < 4; edge++) {
-          const next = (edge + 1) % 4;
-          push([[...outer[edge], back], [...outer[next], back], [...inner[next], back], [...inner[edge], back]], "back", edge);
-          push([[...outer[edge], front], [...outer[next], front], [...outer[next], back], [...outer[edge], back]], "outer", edge);
-          push([[...inner[edge], front], [...inner[next], front], [...inner[next], back], [...inner[edge], back]], "inner", edge);
-          push([[...outer[edge], front], [...outer[next], front], [...inner[next], front], [...inner[edge], front]], "front", edge);
+      const faces = [];
+      function push(points, lane, t, kind, normal) {
+        const projected = points.map((point) => project(point));
+        faces.push({ projected, lane, t, kind, normal, depth: projected.reduce((total, p) => total + p.depth, 0) / projected.length });
+      }
+      ribbons.forEach(({ lane, rings }) => {
+        for (let i = 0; i < samples; i++) {
+          const a = rings[i], b = rings[i + 1];
+          push([a.left, a.right, b.right, b.left], lane, a.t, "face", a.normal);
+          push([a.left, b.left, b.lowerLeft, a.lowerLeft], lane, a.t, "left", a.normal);
+          push([a.right, a.lowerRight, b.lowerRight, b.right], lane, a.t, "right", a.normal);
         }
+        [rings[0], rings[samples]].forEach((ring) => push([ring.left, ring.lowerLeft, ring.lowerRight, ring.right], lane, ring.t, "cap", ring.normal));
       });
-      surfaces.sort((a, b) => b.depth - a.depth);
+      faces.sort((a, b) => b.depth - a.depth);
 
-      // Ground reflection: deliberately soft and short, like brushed stone.
-      ctx.save();
-      ctx.filter = "blur(1.5px)";
-      for (const surface of surfaces) {
-        if (surface.type !== "front" && surface.type !== "inner") continue;
-        const projected = surface.points.map((point) => project(...point, true));
-        const sheen = ctx.createLinearGradient(0, floorCenter.y - unit * 0.05, 0, floorCenter.y + unit * 1.6);
-        sheen.addColorStop(0, "rgba(112,164,166,0.14)");
-        sheen.addColorStop(0.35, "rgba(89,134,137,0.035)");
-        sheen.addColorStop(1, "rgba(40,70,74,0)");
-        polygon(projected, sheen);
-      }
-      ctx.restore();
-
-      // Continuous conduits turn towards the opening and travel through all
-      // three frames. The travelling highlights follow that same geometry.
-      function route(z, lane) {
-        const entrance = Math.max(0, -z - 0.8);
-        const exit = Math.max(0, z - 1.9);
-        const x = (lane - 3) * 0.09 - entrance * entrance * 0.16 + exit * exit * 0.07;
-        const y = ground + 0.245 + Math.sin((z + 3.8) * 0.6) * 0.05;
-        return project(x, y, z);
-      }
-      for (let lane = 0; lane < 7; lane++) {
-        const points = [];
-        for (let step = 0; step <= 88; step++) points.push(route(-4.05 + step / 88 * 8.1, lane));
-        line(points, lane === 3 ? "#d6c7a0" : "#80aeb1", lane === 3 ? 1 : 0.65, lane === 3 ? 0.47 : 0.22);
-        const progress = ((phase * 0.13 + lane * 0.145) % 1);
-        const head = -3.9 + progress * 7.8;
-        for (let segment = 0; segment < 12; segment++) {
-          const z = head - segment * 0.055;
-          if (z < -4.05 || z > 4.05) continue;
-          line([route(z, lane), route(z + 0.06, lane)], lane === 3 ? "#f0deb0" : "#a7e2df", 1.3, (1 - segment / 12) * 0.85);
+      for (const face of faces) {
+        const { projected: p, lane, t, kind, normal } = face;
+        if (kind !== "face") {
+          const metal = ctx.createLinearGradient(p[0].x, p[0].y, p[2].x + 0.001, p[2].y + 0.001);
+          metal.addColorStop(0, tint(kind === "left" ? 0.54 : 0.30, lane));
+          metal.addColorStop(0.42, tint(0.10, lane));
+          metal.addColorStop(1, tint(kind === "cap" ? 0.70 : 0.17, lane));
+          polygon(p, metal, true);
+          continue;
+        }
+        // Broad studio reflection plus a narrow machined edge describe satin metal.
+        const facing = Math.abs(normal[2]);
+        const bend = 0.34 + Math.sin(t * 5.1 + lane * 0.55) * 0.13;
+        const sweep = Math.exp(-Math.pow((t - ((phase * 0.046 + lane * 0.12) % 1.5 - 0.2)) / 0.18, 2)) * 0.13;
+        const amount = Math.min(0.90, bend + facing * 0.16 + sweep);
+        const material = ctx.createLinearGradient((p[0].x + p[3].x) / 2, (p[0].y + p[3].y) / 2, (p[1].x + p[2].x) / 2 + 0.001, (p[1].y + p[2].y) / 2 + 0.001);
+        material.addColorStop(0, tint(Math.min(1, amount + 0.43), lane));
+        material.addColorStop(0.045, tint(amount + 0.11, lane));
+        material.addColorStop(0.24, tint(amount + 0.31, lane));
+        material.addColorStop(0.58, tint(amount, lane));
+        material.addColorStop(0.88, tint(Math.max(0.07, amount - 0.30), lane));
+        material.addColorStop(0.97, tint(amount - 0.13, lane));
+        material.addColorStop(1, tint(amount + 0.33, lane));
+        polygon(p, material, true);
+        line(p[0], p[3], "#d3e3dc", 0.65, 0.55);
+        line(p[1], p[2], lane === 1 ? "#b7e1d4" : "#90afa9", 0.7, 0.45);
+        if (unit > 90) {
+          [0.18, 0.33, 0.68].forEach((fraction) => {
+            const a = { x: p[0].x + (p[1].x - p[0].x) * fraction, y: p[0].y + (p[1].y - p[0].y) * fraction };
+            const b = { x: p[3].x + (p[2].x - p[3].x) * fraction, y: p[3].y + (p[2].y - p[3].y) * fraction };
+            line(a, b, "#d5e2db", 0.35, 0.07);
+          });
         }
       }
-
-      // Material faces carry directional highlights rather than flat strokes.
-      for (const surface of surfaces) {
-        const { projected, type, edge, index } = surface;
-        const left = Math.min(...projected.map((p) => p.x));
-        const right = Math.max(...projected.map((p) => p.x));
-        const top = Math.min(...projected.map((p) => p.y));
-        const bottom = Math.max(...projected.map((p) => p.y));
-        const material = ctx.createLinearGradient(left, top, right + 0.01, bottom + 0.01);
-        if (type === "front") {
-          const palette = edge === 0
-            ? ["#bacac9", "#64787d", "#253b41", "#8ca8aa"]
-            : edge === 3
-              ? ["#8ca5a7", "#30484e", "#15282e", "#729195"]
-              : edge === 1
-                ? ["#5a757c", "#172a32", "#354e53", "#739195"]
-                : ["#14272d", "#496368", "#7e9e9e", "#273f43"];
-          palette.forEach((color, i) => material.addColorStop(i / 3, color));
-        } else if (type === "inner") {
-          material.addColorStop(0, edge === 3 ? "#365a5e" : "#12262d");
-          material.addColorStop(0.55, "#0b161c");
-          material.addColorStop(1, edge === 1 ? "#5c8c8d" : "#27464d");
-        } else {
-          material.addColorStop(0, "#18292f");
-          material.addColorStop(0.6, "#0b171c");
-          material.addColorStop(1, "#29424a");
-        }
-        polygon(projected, material, 1, type === "front" ? "rgba(179,214,216,0.28)" : "rgba(80,124,131,0.12)");
-        if (type === "front") {
-          // Machined edge: a one-pixel lip with a quieter parallel chamfer.
-          line([projected[0], projected[1]], "#d1e6e4", 0.8, edge === 0 ? 0.78 : 0.25);
-          line([projected[2], projected[3]], index === 1 ? "#cddbd4" : "#a7d6d3", 1.05, 0.7);
-          const shine = 0.21 + Math.sin(phase * 0.8 - index * 0.9) * 0.08;
-          ctx.save();
-          ctx.shadowColor = "#76c8c1";
-          ctx.shadowBlur = 7;
-          line([projected[2], projected[3]], "#8dc9c3", 1.1, shine);
-          ctx.restore();
-        }
-      }
-
-      // Tiny engraved registration marks belong to the sculpture, not the UI.
-      frames.forEach(({ z, index }) => {
-        const a = project(-1.064, ground + 0.27, z - 0.126);
-        const b = project(-1.018, ground + 0.27, z - 0.126);
-        for (let mark = 0; mark <= index; mark++) {
-          line([{ x: a.x, y: a.y - mark * 3 }, { x: b.x, y: b.y - mark * 3 }], "#cbdedb", 0.8, 0.6);
-        }
-      });
-
-      // Light escaping the far opening is a narrow physical slit.
-      const distantA = project(-0.62, ground + 0.19, 2.28);
-      const distantB = project(0.62, ground + 0.19, 2.28);
-      const horizon = ctx.createLinearGradient(distantA.x, distantA.y, distantB.x, distantB.y);
-      horizon.addColorStop(0, "rgba(152,215,208,0)");
-      horizon.addColorStop(0.5, "rgba(192,234,224,0.65)");
-      horizon.addColorStop(1, "rgba(152,215,208,0)");
-      line([distantA, distantB], horizon, 1.2);
     }
 
     function canAnimate() {
       return visible && !document.hidden && !controlsRef.current.paused && !controlsRef.current.reducedMotion;
     }
-
     function tick(timestamp) {
       frame = 0;
-      if (!canAnimate()) {
-        lastTime = 0;
-        return;
-      }
+      if (!canAnimate()) { lastTime = 0; return; }
       if (!lastTime) lastTime = timestamp;
       const delta = Math.min((timestamp - lastTime) / 1000, 0.05);
-      lastTime = timestamp;
-      elapsed += delta;
-      const ease = 1 - Math.exp(-delta * 4);
-      pointerX += (targetX - pointerX) * ease;
-      pointerY += (targetY - pointerY) * ease;
-      draw(timestamp);
+      lastTime = timestamp; elapsed += delta;
+      const ease = 1 - Math.exp(-delta * 3.5);
+      pointerX += (targetX - pointerX) * ease; pointerY += (targetY - pointerY) * ease;
+      // Thirty rendered frames per second are sufficient for this slow sculpture.
+      if (timestamp - lastDraw >= 1000 / 30) { draw(); lastDraw = timestamp; }
       frame = requestAnimationFrame(tick);
     }
-
     function sync() {
       if (disposed) return;
       if (frame) cancelAnimationFrame(frame);
-      frame = 0;
-      lastTime = 0;
-      draw();
+      frame = 0; lastTime = 0; lastDraw = 0; draw();
       if (canAnimate()) frame = requestAnimationFrame(tick);
     }
-
     function resize() {
       const bounds = canvas.getBoundingClientRect();
-      width = bounds.width;
-      height = bounds.height;
-      ratio = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = Math.max(1, Math.round(width * ratio));
-      canvas.height = Math.max(1, Math.round(height * ratio));
-      sync();
+      width = bounds.width; height = bounds.height; ratio = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.max(1, Math.round(width * ratio)); canvas.height = Math.max(1, Math.round(height * ratio)); sync();
     }
-
     function move(event) {
       if (controlsRef.current.reducedMotion || controlsRef.current.paused || event.pointerType === "touch") return;
       const bounds = canvas.getBoundingClientRect();
@@ -267,30 +211,17 @@ export default function MedlaAperture({ paused = false, reducedMotion = false })
       targetY = Math.max(-1, Math.min(1, (event.clientY - bounds.top) / bounds.height * 2 - 1));
     }
     function resetPointer() { targetX = 0; targetY = 0; }
-
-    const resizeObserver = new ResizeObserver(resize);
-    resizeObserver.observe(canvas);
-    const intersectionObserver = new IntersectionObserver(([entry]) => {
-      visible = entry.isIntersecting;
-      sync();
-    }, { rootMargin: "60px" });
-    intersectionObserver.observe(canvas);
+    const resizeObserver = new ResizeObserver(resize); resizeObserver.observe(canvas);
+    const intersectionObserver = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; sync(); }, { rootMargin: "60px" }); intersectionObserver.observe(canvas);
     document.addEventListener("visibilitychange", sync);
     const pointerSurface = canvas.closest(".m-hero") || canvas;
-    pointerSurface.addEventListener("pointermove", move, { passive: true });
-    pointerSurface.addEventListener("pointerleave", resetPointer, { passive: true });
-    redrawRef.current = sync;
-    resize();
+    pointerSurface.addEventListener("pointermove", move, { passive: true }); pointerSurface.addEventListener("pointerleave", resetPointer, { passive: true });
+    redrawRef.current = sync; resize();
 
     return () => {
-      disposed = true;
-      cancelAnimationFrame(frame);
-      resizeObserver.disconnect();
-      intersectionObserver.disconnect();
-      document.removeEventListener("visibilitychange", sync);
-      pointerSurface.removeEventListener("pointermove", move);
-      pointerSurface.removeEventListener("pointerleave", resetPointer);
-      redrawRef.current = null;
+      disposed = true; cancelAnimationFrame(frame);
+      resizeObserver.disconnect(); intersectionObserver.disconnect(); document.removeEventListener("visibilitychange", sync);
+      pointerSurface.removeEventListener("pointermove", move); pointerSurface.removeEventListener("pointerleave", resetPointer); redrawRef.current = null;
     };
   }, []);
 

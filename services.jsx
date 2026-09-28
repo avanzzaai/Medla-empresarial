@@ -1,3 +1,5 @@
+import ServiceMoment from "./components/service-moment.jsx";
+
 const { useEffect, useRef, useState } = React;
 
 const CAPABILITY_FAMILIES = [
@@ -75,29 +77,21 @@ function useReducedMotion() {
   return reduced;
 }
 
-function CapabilityFallback() {
-  return <svg className="svc-lab__fallback" viewBox="0 0 600 220" aria-hidden="true">
-    <path d="M48 110H205M395 110H552" pathLength="1" />
-    <circle cx="48" cy="110" r="12" /><circle cx="552" cy="110" r="12" />
-    <g transform="translate(300 110)"><circle r="76" /><circle r="48" /><text y="5" textAnchor="middle">MEDLA</text></g>
-  </svg>;
-}
-
 function CapabilityMap() {
   const [active, setActive] = useState(0);
   const reducedMotion = useReducedMotion();
-  const [stage, setStage] = useState(() => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? 2 : 0);
+  const [stage, setStage] = useState(0);
   const [running, setRunning] = useState(() => !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches);
   const [visible, setVisible] = useState(false);
   const family = CAPABILITY_FAMILIES[active];
   const refs = useRef([]);
   const labRef = useRef(null);
-  const Scene = window.MedlaServiceScenes?.[family.lab.scene] || window.Scenes?.[family.lab.scene] || CapabilityFallback;
-  const stages = ["Proyecto", "Capacidades", "Resultado"];
+  const modes = ["document", "flow", "agent", "growth"];
+  const stages = ["Entender", "Preparar", "Validar", "Entregar"];
+  const caption = [family.lab.project, family.lab.capabilities.join(" · "), "Revisamos el resultado con la persona responsable antes de avanzar.", family.lab.result][stage];
 
   useEffect(() => {
     if (!reducedMotion) return;
-    setStage(2);
     setRunning(false);
   }, [reducedMotion]);
 
@@ -131,13 +125,13 @@ function CapabilityMap() {
         setStage(stages.length - 1);
         setRunning(false);
       } else setStage((value) => value + 1);
-    }, 1450);
+    }, 2600);
     return () => window.clearTimeout(timer);
   }, [active, stage, running, reducedMotion, visible]);
 
   const chooseFamily = (index) => {
     setActive(index);
-    setStage(reducedMotion ? 2 : 0);
+    setStage(0);
     setRunning(!reducedMotion);
   };
   const chooseStage = (index) => {
@@ -145,16 +139,16 @@ function CapabilityMap() {
     setRunning(false);
   };
   const toggleSequence = () => {
-    if (reducedMotion) return;
+    if (reducedMotion) { setStage((value) => (value + 1) % stages.length); return; }
     if (running) setRunning(false);
     else if (stage >= stages.length - 1) { setStage(0); setRunning(true); }
     else setRunning(true);
   };
 
-  return <div ref={labRef} className={`svc-lab${running ? " is-running" : ""}`} aria-label="Laboratorio interactivo de capacidades MEDLA">
+  return <div ref={labRef} className={`svc-lab${running && visible ? " is-running" : ""}`} aria-label="Explorar cómo trabaja cada área de MEDLA">
     <header className="svc-lab__head">
-      <div><span>M/ LABORATORIO DE PROYECTO</span><strong>{family.label}</strong></div>
-      <button type="button" onClick={toggleSequence} disabled={reducedMotion} aria-label={running ? "Pausar secuencia" : stage >= stages.length - 1 ? "Repetir secuencia" : "Continuar secuencia"}><i className={running ? "is-live" : ""} />{reducedMotion ? "MOVIMIENTO REDUCIDO" : running ? "PAUSAR" : stage >= stages.length - 1 ? "REPETIR" : "CONTINUAR"}</button>
+      <div><span>DEL PROBLEMA A LA ENTREGA</span></div>
+      <button type="button" onClick={toggleSequence} aria-label={reducedMotion ? "Siguiente fase" : running ? "Pausar secuencia" : stage >= stages.length - 1 ? "Repetir secuencia" : "Continuar secuencia"}><i className={running && visible ? "is-live" : ""} />{reducedMotion ? "SIGUIENTE" : running ? "PAUSAR" : stage >= stages.length - 1 ? "REPETIR" : "CONTINUAR"}</button>
     </header>
     <div className="svc-lab__routes" role="tablist" aria-label="Familias de capacidades">
       {CAPABILITY_FAMILIES.map((item,index) => <button key={item.id} ref={(node) => { refs.current[index] = node; }} type="button" role="tab" id={`map-tab-${item.id}`} aria-controls="map-panel" aria-selected={active === index} tabIndex={active === index ? 0 : -1} onClick={() => chooseFamily(index)} onKeyDown={(event) => {
@@ -165,23 +159,11 @@ function CapabilityMap() {
       }}><span>{item.number}</span><b>{item.label}</b><i /></button>)}
     </div>
     <article id="map-panel" className="svc-lab__panel" role="tabpanel" aria-labelledby={`map-tab-${family.id}`} key={family.id}>
-      <div className={`svc-lab__node svc-lab__node--project ${stage === 0 ? "is-active" : "is-complete"}`}>
-        <span>01 / PROYECTO</span><strong>{family.lab.project}</strong><small>Situación de partida</small>
-      </div>
-      <div className={`svc-lab__connector ${stage >= 1 ? "is-complete" : ""}`} aria-hidden="true"><span>activar</span><i /></div>
-      <div className={`svc-lab__node svc-lab__node--capabilities ${stage === 1 ? "is-active" : stage > 1 ? "is-complete" : "is-pending"}`}>
-        <span>02 / CAPACIDADES</span>
-        <div className="svc-lab__scene" aria-hidden="true"><Scene key={`${family.id}-${stage}`} t={(stage + 1) * 1.35} /></div>
-        <strong>{family.title}</strong>
-        <ul>{family.lab.capabilities.map((item) => <li key={item}><i />{item}</li>)}</ul>
-      </div>
-      <div className={`svc-lab__connector ${stage >= 2 ? "is-complete" : ""}`} aria-hidden="true"><span>validar</span><i /></div>
-      <div className={`svc-lab__node svc-lab__node--result ${stage === 2 ? "is-active" : "is-pending"}`}>
-        <span>03 / RESULTADO</span><strong>{family.lab.result}</strong><ul>{family.outputs.map((output) => <li key={output}><i />{output}</li>)}</ul>
-      </div>
+      <ServiceMoment mode={modes[active]} stage={stage} playing={running && visible} reducedMotion={reducedMotion} />
+      <div className="svc-lab__caption" key={stage}><span>0{stage + 1} / {stages[stage]}</span><p>{caption}</p></div>
     </article>
     <footer className="svc-lab__timeline">
-      <span className="svc-lab__status" aria-live="polite">FASE {String(stage + 1).padStart(2,"0")} / 03 · {stages[stage]}</span>
+      <span className="svc-lab__status">Ejemplo ilustrativo</span>
       <div role="group" aria-label="Explorar las fases del laboratorio">{stages.map((label,index) => <button key={label} type="button" className={`${index === stage ? "is-active" : ""}${index < stage ? " is-complete" : ""}`} aria-pressed={index === stage} onClick={() => chooseStage(index)}><span>0{index+1}</span>{label}<i /></button>)}</div>
     </footer>
   </div>;
@@ -216,7 +198,7 @@ function ProjectRouter() {
     <div className="svc-shell">
       <div className="svc-section-head" data-svc-reveal><span>01 / PUNTO DE PARTIDA</span><h2 id="router-title">Describe la situación. <em>A partir de ella, identificamos las capacidades necesarias.</em></h2><p>Selecciona la situación más próxima para ver qué debe quedar definido antes de iniciar.</p></div>
       <div className="svc-router__workspace" data-svc-reveal>
-        <div className="svc-router__questions" role="tablist" aria-label="Situaciones empresariales">
+        <div className="svc-router__questions" role="tablist" aria-orientation="vertical" aria-label="Situaciones empresariales">
           {STARTING_POINTS.map((item,index) => <button key={item.id} ref={(node) => { refs.current[index] = node; }} type="button" role="tab" id={`start-tab-${item.id}`} aria-controls="start-panel" aria-selected={active === index} tabIndex={active === index ? 0 : -1} onClick={() => setActive(index)} onKeyDown={(event) => move(event,index)}><span>0{index+1}</span><b>{item.label}</b><Arrow /></button>)}
         </div>
         <article id="start-panel" className="svc-router__answer" role="tabpanel" aria-labelledby={`start-tab-${point.id}`} key={point.id}>

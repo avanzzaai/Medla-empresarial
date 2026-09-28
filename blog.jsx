@@ -1,4 +1,4 @@
-const { useEffect, useMemo, useRef, useState } = React;
+const { useEffect, useLayoutEffect, useMemo, useRef, useState } = React;
 
 const GUIDES = [
   {
@@ -81,40 +81,6 @@ const GUIDES = [
   }
 ];
 
-const NOTE_FLOW = [
-  {
-    id: "fact",
-    label: "Situación",
-    kicker: "Hecho observable",
-    title: "Una misma solicitud sigue varios recorridos",
-    detail: "El equipo resuelve la salida principal y sus excepciones con criterios distintos y sin un registro común.",
-    mark: "01",
-  },
-  {
-    id: "question",
-    label: "Pregunta crítica",
-    kicker: "Pregunta de control",
-    title: "¿Qué decisión debe seguir siendo humana?",
-    detail: "Distingue quién propone, quién aporta contexto y quién conserva la autoridad para decidir.",
-    mark: "?",
-  },
-  {
-    id: "boundary",
-    label: "Límite",
-    kicker: "Frontera operativa",
-    title: "Las excepciones necesitan una salida hacia una persona",
-    detail: "Los casos atípicos deben llegar a un responsable con contexto suficiente para actuar.",
-    mark: "↳",
-  },
-  {
-    id: "application",
-    label: "Aplicación",
-    kicker: "Salida",
-    title: "Mapa de reglas y excepciones",
-    detail: "La nota deja hechos, preguntas y límites preparados para abrir una conversación de proyecto.",
-    mark: "✓",
-  },
-];
 
 const CATEGORY_FILTERS = [
   { label: "Todas", categories: null },
@@ -134,144 +100,22 @@ function useReducedMotion() {
   return reduced;
 }
 
-function NotePreview() {
-  const [active, setActive] = useState(0);
-  const [running, setRunning] = useState(false);
-  const [visible, setVisible] = useState(false);
-  const reducedMotion = useReducedMotion();
-  const autoplayStarted = useRef(false);
-  const previewRef = useRef(null);
-  const tabRefs = useRef([]);
-  const stage = NOTE_FLOW[active];
-  const atEnd = active === NOTE_FLOW.length - 1;
-
-  useEffect(() => {
-    const preview = previewRef.current;
-    if (!preview) return undefined;
-    const start = () => {
-      if (reducedMotion || autoplayStarted.current) return;
-      autoplayStarted.current = true;
-      setRunning(true);
-    };
-    const syncVisibility = () => {
-      const rect = preview.getBoundingClientRect();
-      const visibleHeight = Math.max(0, Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0));
-      const isVisible = !document.hidden && visibleHeight >= Math.min(rect.height, window.innerHeight) * .35;
-      setVisible(isVisible);
-      if (isVisible) start();
-    };
-    if (!("IntersectionObserver" in window)) {
-      syncVisibility();
-      document.addEventListener("visibilitychange", syncVisibility);
-      return () => document.removeEventListener("visibilitychange", syncVisibility);
-    }
-    const observer = new IntersectionObserver(([entry]) => {
-      const isVisible = entry.isIntersecting && !document.hidden;
-      setVisible(isVisible);
-      if (isVisible) start();
-    }, { threshold: .35 });
-    observer.observe(preview);
-    document.addEventListener("visibilitychange", syncVisibility);
-    syncVisibility();
-    return () => {
-      observer.disconnect();
-      document.removeEventListener("visibilitychange", syncVisibility);
-    };
-  }, [reducedMotion]);
-
-  useEffect(() => {
-    if (!running || reducedMotion || !visible) return undefined;
-    const timer = window.setTimeout(() => {
-      if (active >= NOTE_FLOW.length - 2) {
-        setActive(NOTE_FLOW.length - 1);
-        setRunning(false);
-      } else setActive((value) => value + 1);
-    }, 1750);
-    return () => window.clearTimeout(timer);
-  }, [active, reducedMotion, running, visible]);
-
-  useEffect(() => {
-    if (reducedMotion) setRunning(false);
-  }, [reducedMotion]);
-
-  const selectStage = (index, { focus = false } = {}) => {
-    setActive(index);
-    setRunning(false);
-    if (focus) tabRefs.current[index]?.focus();
-  };
-
-  const move = (event, index) => {
-    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
-    event.preventDefault();
-    const next = event.key === "Home"
-      ? 0
-      : event.key === "End"
-        ? NOTE_FLOW.length - 1
-        : (index + (event.key === "ArrowRight" ? 1 : -1) + NOTE_FLOW.length) % NOTE_FLOW.length;
-    selectStage(next, { focus: true });
-  };
-
-  const toggleSequence = () => {
-    if (reducedMotion) {
-      setActive(atEnd ? 0 : active + 1);
-      return;
-    }
-    if (running) {
-      setRunning(false);
-      return;
-    }
-    if (atEnd) setActive(0);
-    if (!reducedMotion) setRunning(true);
-  };
-
-  const sequenceLabel = reducedMotion
-    ? atEnd ? "Volver al inicio" : "Siguiente paso"
-    : running ? "Pausar secuencia" : atEnd ? "Repetir secuencia" : "Continuar secuencia";
-
-  return <aside ref={previewRef} className="note-preview" aria-label="Cómo se aplica una nota de decisión">
-    <header><span>M/ NOTA DE DECISIÓN</span><button type="button" onClick={toggleSequence} aria-label={sequenceLabel}><i className={running ? "is-running" : ""} aria-hidden="true" />{sequenceLabel}</button></header>
-    <div className="note-preview__title"><span>OPERACIONES · 6 MIN</span><h2>Qué dibujar antes de automatizar un proceso</h2><p>Una nota para llegar a la conversación con el proceso, las decisiones y los límites mejor definidos.</p></div>
-    <div className="note-preview__journey">
-      <div className="note-preview__rail" aria-hidden="true"><i style={{ "--note-progress": `${active / (NOTE_FLOW.length - 1)}` }} /></div>
-      <div className="note-preview__stages" role="tablist" aria-label="Recorrido de la nota destacada">
-        {NOTE_FLOW.map((item, index) => <button
-          key={item.id}
-          ref={(node) => { tabRefs.current[index] = node; }}
-          type="button"
-          role="tab"
-          id={`note-flow-tab-${item.id}`}
-          aria-controls="note-flow-panel"
-          aria-selected={active === index}
-          tabIndex={active === index ? 0 : -1}
-          className={`${active === index ? "is-active" : ""}${active > index ? " is-complete" : ""}`}
-          onClick={() => selectStage(index)}
-          onKeyDown={(event) => move(event, index)}
-        ><span>{String(index + 1).padStart(2, "0")}</span><i aria-hidden="true" /><b>{item.label}</b></button>)}
-      </div>
-    </div>
-    <div id="note-flow-panel" className="note-preview__detail" role="tabpanel" aria-labelledby={`note-flow-tab-${stage.id}`} key={stage.id}>
-      <div><span>{stage.kicker}</span><strong>{stage.mark}</strong></div>
-      <div><h3>{stage.title}</h3><p>{stage.detail}</p></div>
-    </div>
-    <footer><span>Leer · aplicar · compartir</span><span>{String(active + 1).padStart(2, "0")} / {String(NOTE_FLOW.length).padStart(2, "0")}</span></footer>
-  </aside>;
-}
 
 function Hero({ onOpenCover }) {
   return <header className="journal-hero">
-    <div className="journal-hero-kicker"><span>Notas de decisión</span><span>06 notas disponibles</span></div>
+    <div className="journal-hero-kicker"><span>Ideas MEDLA</span><span>Empresa / Legal / Tecnología</span></div>
     <div className="journal-hero-main"><div className="journal-hero-copy">
-      <p className="journal-overline">Ideas MEDLA</p><h1>Ideas para decidir<br /><em>y trabajar mejor.</em></h1>
-      <p className="journal-hero-intro">Análisis breves, preguntas de control y plantillas para dirección, operaciones y equipos de proyecto.</p>
-      <button className="text-action" type="button" onClick={onOpenCover}>Abrir la nota destacada <span aria-hidden="true">↘</span></button>
-    </div><NotePreview /></div>
+      <h1>Pensar mejor.<br /><em>Decidir mejor.</em></h1>
+      <p className="journal-hero-intro">Notas breves sobre las decisiones que aparecen cuando diriges, organizas o transformas una empresa.</p>
+      <a className="text-action" href="#indice">Explorar las notas <span aria-hidden="true">↓</span></a>
+    </div><aside className="journal-featured" aria-label="Nota destacada"><span>Para empezar / 01</span><p>Antes de automatizar,<br />dibuja la decisión.</p><small>Operaciones · {GUIDES[0].duration}</small><button type="button" onClick={onOpenCover}>Leer la nota <span aria-hidden="true">↗</span></button></aside></div>
     <div className="journal-hero-foot"><span>01 — Seis notas prácticas</span><a href="#indice">Explorar las notas <span aria-hidden="true">↓</span></a></div>
   </header>;
 }
 
 function FilterBar({ query, setQuery, category, setCategory, resultCount }) {
   return <section className="journal-controls" aria-label="Buscar notas">
-    <div className="journal-section-index"><span>Índice por decisión</span><span>{String(resultCount).padStart(2, "0")} notas</span></div>
+    <div className="journal-section-index"><span>Elige por dónde empezar</span><span role="status" aria-live="polite">{String(resultCount).padStart(2, "0")} {resultCount === 1 ? "nota" : "notas"}</span></div>
     <div className="journal-control-row journal-control-row--simple">
       <div className="journal-filter-group"><p>Explora por operación, decisión o tecnología.</p><div className="journal-filters" role="group" aria-label="Filtrar notas por categoría">{CATEGORY_FILTERS.map((item) => <button key={item.label} type="button" className={category === item.label ? "is-active" : ""} aria-pressed={category === item.label} onClick={() => setCategory(item.label)}>{item.label}</button>)}</div></div>
       <label className="journal-search"><span className="sr-only">Buscar en las notas</span><span aria-hidden="true">⌕</span><input type="search" placeholder="Buscar por tema" value={query} onChange={(event) => setQuery(event.target.value)} /></label>
@@ -280,7 +124,32 @@ function FilterBar({ query, setQuery, category, setCategory, resultCount }) {
 }
 
 function GuideIndex({ guides, onOpen }) {
-  return <section id="indice" className="guide-index" tabIndex="-1" aria-label="Índice de notas">{guides.length ? guides.map((guide, index) =>
+  const indexRef = useRef(null), previousRects = useRef(new Map());
+  const reducedMotion = useReducedMotion();
+  const resultKey = guides.map(guide => guide.id).join("|");
+  useLayoutEffect(() => {
+    const rows = [...(indexRef.current?.querySelectorAll(".guide-row") || [])];
+    const animations = [];
+    const nextRects = new Map();
+    rows.forEach((row, index) => {
+      const rect = row.getBoundingClientRect();
+      const previous = previousRects.current.get(row.id);
+      const documentTop = rect.top + window.scrollY;
+      nextRects.set(row.id, { top: documentTop });
+      if (reducedMotion || document.hidden || rect.bottom <= 0 || rect.top >= window.innerHeight || !row.animate) return;
+      const offset = previous ? previous.top - documentTop : 10;
+      if (previous && Math.abs(offset) < 1) return;
+      animations.push(row.animate([
+        { transform: `translateY(${offset}px)`, opacity: previous ? 1 : 0 },
+        { transform: "translateY(0)", opacity: 1 },
+      ], { duration: 320, delay: previous ? 0 : Math.min(index * 25, 100), easing: "cubic-bezier(.22,1,.36,1)" }));
+    });
+    previousRects.current = nextRects;
+    const stopWhenHidden = () => { if (document.hidden) animations.forEach(animation => animation.cancel()); };
+    document.addEventListener("visibilitychange", stopWhenHidden);
+    return () => { animations.forEach(animation => animation.cancel()); document.removeEventListener("visibilitychange", stopWhenHidden); };
+  }, [resultKey, reducedMotion]);
+  return <section ref={indexRef} id="indice" className="guide-index" tabIndex="-1" aria-label="Índice de notas">{guides.length ? guides.map((guide, index) =>
     <article id={guide.id} className="guide-row" style={{ "--row-index": index }} key={guide.id}><button type="button" className="guide-row-button" onClick={() => onOpen(guide)} aria-label={`Abrir nota: ${guide.title}`}>
       <span className="guide-number">{guide.number}</span><span className="guide-category">{guide.category}</span>
       <span className="guide-title-wrap"><span className="guide-title">{guide.title}</span><span className="guide-excerpt">{guide.excerpt}</span></span>
@@ -292,7 +161,9 @@ function GuideIndex({ guides, onOpen }) {
 function GuideReader({ guide, onClose, onNext }) {
   const dialogRef = useRef(null), closeRef = useRef(null);
   const [progress, setProgress] = useState(0);
+  const [activeSection, setActiveSection] = useState(-1);
   const [copyStatus, setCopyStatus] = useState("");
+  const reducedMotion = useReducedMotion();
   useEffect(() => {
     if (!guide) return undefined;
     const oldOverflow = document.body.style.overflow;
@@ -314,16 +185,32 @@ function GuideReader({ guide, onClose, onNext }) {
   useEffect(() => {
     const reader = dialogRef.current;
     if (!guide || !reader) return undefined;
+    reader.scrollTop = 0;
     setProgress(0);
+    setActiveSection(-1);
     setCopyStatus("");
+    let frame = 0;
     const update = () => {
+      frame = 0;
       const max = reader.scrollHeight - reader.clientHeight;
       setProgress(max > 0 ? Math.min(1, reader.scrollTop / max) : 1);
+      const threshold = reader.getBoundingClientRect().top + 160;
+      const sections = [...reader.querySelectorAll(".reader-sections > section")];
+      let active = -1;
+      sections.forEach((section, index) => { if (section.getBoundingClientRect().top <= threshold) active = index; });
+      setActiveSection(active);
     };
+    const schedule = () => { if (!frame) frame = window.requestAnimationFrame(update); };
     update();
-    reader.addEventListener("scroll", update, { passive: true });
-    return () => reader.removeEventListener("scroll", update);
+    reader.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    return () => { window.cancelAnimationFrame(frame); reader.removeEventListener("scroll", schedule); window.removeEventListener("resize", schedule); };
   }, [guide]);
+  const jumpToSection = (index) => {
+    const section = dialogRef.current?.querySelectorAll(".reader-sections > section")[index];
+    section?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
+    section?.focus({ preventScroll: true });
+  };
   const copyLink = async () => {
     const url = new URL(window.location.href);
     url.searchParams.set("guide", guide.id);
@@ -338,11 +225,11 @@ function GuideReader({ guide, onClose, onNext }) {
   if (!guide) return null;
   return <div className="reader-shell" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
     <article ref={dialogRef} className="reader" role="dialog" aria-modal="true" aria-labelledby="reader-title">
-      <header className="reader-head"><span className="reader-brand">Notas de decisión / {guide.number}</span><button ref={closeRef} type="button" className="reader-close" onClick={onClose}>Cerrar <span aria-hidden="true">×</span></button></header>
-      <div className="reader-layout"><aside className="reader-aside"><span>{guide.category}</span><span>{guide.format}</span><span>{guide.duration} de lectura</span><div className="reader-progress" aria-hidden="true"><span style={{ width: `${Math.round(progress * 100)}%` }}></span></div><small>{Math.round(progress * 100)}% leído</small></aside>
+      <header className="reader-head"><span className="reader-brand">Notas de decisión / {guide.number}</span><button ref={closeRef} type="button" className="reader-close" onClick={onClose}>Cerrar <span aria-hidden="true">×</span></button><div className="reader-top-progress" role="progressbar" aria-label="Posición en la nota" aria-valuemin="0" aria-valuemax="100" aria-valuenow={Math.round(progress * 100)}><i style={{ transform: `scaleX(${progress})` }} /></div></header>
+      <div className="reader-layout"><aside className="reader-aside"><span>{guide.category}</span><span>{guide.format}</span><span>{guide.duration} de lectura</span><nav className="reader-chapters" aria-label="Secciones de la nota">{guide.sections.map((section, index) => <button key={section[0]} type="button" aria-current={activeSection === index ? "location" : undefined} onClick={() => jumpToSection(index)}><small>0{index + 1}</small>{section[0]}</button>)}</nav><div className="reader-progress" aria-hidden="true"><span style={{ width: `${Math.round(progress * 100)}%` }}></span></div><small>{Math.round(progress * 100)}% del recorrido</small></aside>
         <div className="reader-content"><p className="reader-eyebrow">Una nota para preparar el proyecto</p><h2 id="reader-title">{guide.title}</h2><p className="reader-lead">{guide.intro}</p>
           <blockquote><span>Pregunta crítica</span><p>{guide.question}</p></blockquote>
-          <div className="reader-sections">{guide.sections.map((section, index) => <section key={section[0]}><span>{String(index + 1).padStart(2, "0")}</span><div><h3>{section[0]}</h3><p>{section[1]}</p></div></section>)}</div>
+          <div className="reader-sections">{guide.sections.map((section, index) => <section key={section[0]} tabIndex="-1"><span>{String(index + 1).padStart(2, "0")}</span><div><h3>{section[0]}</h3><p>{section[1]}</p></div></section>)}</div>
           <div className="reader-takeaway"><span>Lo que debería quedar sobre la mesa</span><p>{guide.takeaway}</p></div>
           <div className="reader-actions"><a href={`contacto.html?context=notas&guide=${guide.id}`}>Aplicar esta nota a un proyecto <span aria-hidden="true">↗</span></a><button type="button" onClick={copyLink}>Copiar enlace <span aria-hidden="true">⧉</span></button><button type="button" onClick={onNext}>Siguiente nota <span aria-hidden="true">→</span></button></div><p className="reader-copy-status" role="status" aria-live="polite">{copyStatus}</p>
         </div>
@@ -352,7 +239,7 @@ function GuideReader({ guide, onClose, onNext }) {
 }
 
 function EditorialStatement() {
-  return <section className="editorial-statement"><div className="statement-label">02 — Cómo utilizarlas</div><div className="statement-copy"><p>Cada nota ayuda a preparar hechos, preguntas y límites antes de una decisión. No sustituye asesoramiento adaptado al caso.</p><h2>Llega a la conversación con <em>hechos reunidos, preguntas de control y límites explícitos.</em></h2></div><div className="statement-mark" aria-hidden="true">M<span>/</span>06</div></section>;
+  return <section className="editorial-statement"><div className="statement-label">Cómo utilizarlas</div><div className="statement-copy"><h2>Lee. Contrasta.<br /><em>Llévalo a tu empresa.</em></h2><p>Cada nota ayuda a preparar hechos, preguntas y límites antes de una decisión. No sustituye asesoramiento adaptado al caso.</p><a href="contacto.html?context=notas">Comentar una nota con MEDLA <span aria-hidden="true">↗</span></a></div></section>;
 }
 
 function ConversationCTA() {
@@ -461,7 +348,7 @@ function BlogApp() {
     readerOrigin.current = openedFromIndex ? "index" : "direct";
     setSelected(next);
   };
-  return <div className="journal-page"><a className="journal-skip" href="#indice">Saltar al índice</a><window.MedlaSiteHeader current="insights" /><main><Hero onOpenCover={() => openGuide(GUIDES[0])} /><FilterBar query={query} setQuery={setQuery} category={category} setCategory={setCategory} resultCount={filtered.length} /><GuideIndex guides={filtered} onOpen={openGuide} /><EditorialStatement /><ConversationCTA /></main><window.MedlaSiteFooter /><GuideReader guide={selected} onClose={closeReader} onNext={nextGuide} /></div>;
+  return <div className="journal-page"><a className="journal-skip" href="#indice">Saltar al índice</a><window.MedlaSiteHeader current="insights" /><main><Hero onOpenCover={() => openGuide(GUIDES[0])} /><FilterBar query={query} setQuery={setQuery} category={category} setCategory={setCategory} resultCount={filtered.length} /><GuideIndex guides={filtered} onOpen={openGuide} /><EditorialStatement /></main><window.MedlaSiteFooter /><GuideReader guide={selected} onClose={closeReader} onNext={nextGuide} /></div>;
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(<BlogApp />);
