@@ -28,9 +28,7 @@ body.nos-body { margin:0; min-width:320px; overflow-x:hidden; color:var(--how-in
 .how-board { position:relative; min-width:0; }
 .how-board__topbar { min-height:56px; display:flex; align-items:center; justify-content:space-between; gap:15px; border-bottom:1px solid var(--how-line-dark); color:var(--how-mint); font-size:9px; letter-spacing:.1em; }
 .how-board__topbar > div { display:flex; align-items:center; gap:9px; }
-.how-board__topbar button { display:flex; align-items:center; gap:9px; min-height:44px; padding:8px 0 8px 12px; border:0; color:#b2bdbe; background:transparent; font-size:10px; cursor:pointer; }
-.how-board__topbar button > i { width:5px; height:5px; border:1px solid var(--how-mint); border-radius:50%; }
-.how-board__topbar button > i.is-running { background:var(--how-mint); }
+.how-board__phase-index { color:#a8b7b6; font-size:10px; letter-spacing:.12em; white-space:nowrap; font-variant-numeric:tabular-nums; }
 .how-board__summary { padding:25px 0 0; }
 .how-board__summary > span { color:#859496; font-size:9px; letter-spacing:.12em; }
 .how-board__summary h2 { margin:13px 0 0; color:#f1f2ed; font:400 clamp(23px,2.2vw,32px)/1.35 var(--how-display); letter-spacing:-.035em; }
@@ -39,9 +37,7 @@ body.nos-body { margin:0; min-width:320px; overflow-x:hidden; color:var(--how-in
 .how-blueprint__input text { fill:#84999b; font-size:12px; letter-spacing:1.2px; }
 .how-blueprint__input circle { fill:#83cec8; }
 .how-blueprint__input path { fill:none; stroke:#365154; stroke-width:1; }
-.how-blueprint__input .how-blueprint__signal { stroke:url(#blueprint-flow); stroke-width:2; stroke-dasharray:45 330; stroke-dashoffset:375; animation:how-signal 3.5s linear infinite; animation-delay:calc(var(--lane) * -.7s); animation-play-state:paused; }
-.how-board.is-running .how-blueprint__signal { animation-play-state:running; }
-@keyframes how-signal { to { stroke-dashoffset:0; } }
+.how-blueprint__input .how-blueprint__signal { stroke:url(#blueprint-flow); stroke-width:2; transition:stroke-dashoffset 1s var(--how-ease); }
 .how-blueprint__document { transform-origin:382px 165px; transition:transform 1s var(--how-ease); }
 .how-blueprint__shadow { fill:#000; opacity:.25; }
 .how-blueprint__paper { fill:url(#blueprint-paper); stroke:#66888a; stroke-width:.75; }

@@ -1,3 +1,5 @@
+import useScrollScene from "./components/use-scroll-scene.jsx";
+
 const { useEffect, useRef, useState } = React;
 
 const PROJECT_RHYTHM = [
@@ -64,7 +66,7 @@ function ProjectBlueprint({ stage }) {
       <text x="22" y={y - 15}>{["COMPRAS", "LEGAL", "SISTEMAS"][index]}</text>
       <circle cx="30" cy={y + 6} r="4" />
       <path d={`M42 ${y + 6} C150 ${y + 6},155 169,245 169`} />
-      <path className="how-blueprint__signal" d={`M42 ${y + 6} C150 ${y + 6},155 169,245 169`} />
+      <path className="how-blueprint__signal" d={`M42 ${y + 6} C150 ${y + 6},155 169,245 169`} pathLength="1" strokeDasharray="1" strokeDashoffset={stage > index ? 0 : 1} />
     </g>)}
     <g className="how-blueprint__document" style={{ transform: `translate(${stage === 3 ? 12 : 0}px,0) rotate(${stage === 0 ? -5 : stage === 1 ? -2 : 0}deg)` }}>
       <path className="how-blueprint__shadow" d="M240 35H490L524 69V293H240Z" transform="translate(8 9)" />
@@ -88,93 +90,29 @@ function ProjectBlueprint({ stage }) {
 }
 
 function GovernanceBoard() {
-  const [active, setActive] = useState(0);
   const reducedMotion = useReducedMotion();
-  const [running, setRunning] = useState(() => !window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-  const [visible, setVisible] = useState(false);
-  const item = PROJECT_RHYTHM[active];
-  const last = PROJECT_RHYTHM.length - 1;
   const refs = useRef([]);
   const boardRef = useRef(null);
-
-  useEffect(() => {
-    const board = boardRef.current;
-    if (!board || !("IntersectionObserver" in window)) {
-      setVisible(true);
-      return undefined;
-    }
-    const updateVisibility = () => {
-      const rect = board.getBoundingClientRect();
-      setVisible(!document.hidden && rect.bottom > 0 && rect.top < window.innerHeight);
-    };
-    const observer = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting && !document.hidden), { threshold: .18 });
-    observer.observe(board);
-    document.addEventListener("visibilitychange", updateVisibility);
-    updateVisibility();
-    return () => {
-      observer.disconnect();
-      document.removeEventListener("visibilitychange", updateVisibility);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (reducedMotion) {
-      setRunning(false);
-      return undefined;
-    }
-    if (!running || !visible) return undefined;
-    const timer = window.setTimeout(() => {
-      const next = active + 1;
-      if (next >= PROJECT_RHYTHM.length) {
-        setRunning(false);
-        return;
-      }
-      setActive(next);
-      if (next === PROJECT_RHYTHM.length - 1) setRunning(false);
-    }, 3400);
-    return () => window.clearTimeout(timer);
-  }, [active, running, visible, reducedMotion]);
-
-  const select = (index) => {
-    setActive(index);
-    setRunning(false);
-  };
-
-  const toggleSequence = () => {
-    if (reducedMotion) {
-      setActive((value) => value >= last ? 0 : value + 1);
-      setRunning(false);
-      return;
-    }
-    if (running) {
-      setRunning(false);
-      return;
-    }
-    if (active === last) setActive(0);
-    setRunning(true);
-  };
+  const { phase: active, selectPhase } = useScrollScene({ ref: boardRef, count: PROJECT_RHYTHM.length, reducedMotion });
+  const item = PROJECT_RHYTHM[active];
 
   const move = (event,index) => {
     if (!["ArrowLeft","ArrowRight","Home","End"].includes(event.key)) return;
     event.preventDefault();
     const next = event.key === "Home" ? 0 : event.key === "End" ? PROJECT_RHYTHM.length - 1 : (index + (event.key === "ArrowRight" ? 1 : -1) + PROJECT_RHYTHM.length) % PROJECT_RHYTHM.length;
-    select(next); refs.current[next]?.focus();
+    selectPhase(next); refs.current[next]?.focus({ preventScroll: true });
   };
-  const finished = active === last && !running;
-  const buttonLabel = reducedMotion
-    ? finished ? "Volver al inicio" : "Siguiente fase"
-    : running ? "Pausar" : finished ? "Repetir" : "Continuar";
-  return <div ref={boardRef} className={`how-board ${running && visible && !reducedMotion ? "is-running" : ""}`} aria-label="Secuencia interactiva del gobierno de un proyecto">
+  return <div ref={boardRef} className="how-board" data-phase={active} aria-label="Secuencia interactiva del gobierno de un proyecto">
     <header className="how-board__topbar">
       <div><i />UN PROYECTO, DE PRINCIPIO A FIN</div>
-      <button type="button" onClick={toggleSequence} aria-label={`${buttonLabel} la secuencia del proyecto`}><i className={running ? "is-running" : ""} />{buttonLabel}</button>
+      <span className="how-board__phase-index">0{active + 1} / 0{PROJECT_RHYTHM.length}</span>
     </header>
     <div className="how-board__summary"><span>EJEMPLO ILUSTRATIVO</span><h2>Un alta de proveedor.<br />Tres áreas. Un mismo acuerdo.</h2></div>
     <ProjectBlueprint stage={active} />
     <div className="how-board__journey">
       <div className="how-board__route" aria-hidden="true" style={{ "--progress": active / (PROJECT_RHYTHM.length - 1) }}><i /></div>
       <div className="how-board__tabs" role="tablist" aria-label="Recorrido del proyecto">
-        {PROJECT_RHYTHM.map((entry,index) => <button className={`${active === index ? "is-active" : ""}${active > index ? " is-complete" : ""}`} key={entry.id} ref={(node) => { refs.current[index] = node; }} type="button" role="tab" id={`rhythm-tab-${entry.id}`} aria-controls="rhythm-panel" aria-selected={active === index} tabIndex={active === index ? 0 : -1} onClick={() => select(index)} onKeyDown={(event) => move(event,index)}><span>{entry.code}</span><i aria-hidden="true" /><b>{entry.label}</b><small>{entry.output}</small></button>)}
+        {PROJECT_RHYTHM.map((entry,index) => <button className={`${active === index ? "is-active" : ""}${active > index ? " is-complete" : ""}`} key={entry.id} ref={(node) => { refs.current[index] = node; }} type="button" role="tab" id={`rhythm-tab-${entry.id}`} aria-controls="rhythm-panel" aria-selected={active === index} tabIndex={active === index ? 0 : -1} onClick={() => selectPhase(index)} onKeyDown={(event) => move(event,index)}><span>{entry.code}</span><i aria-hidden="true" /><b>{entry.label}</b><small>{entry.output}</small></button>)}
       </div>
     </div>
     <article id="rhythm-panel" role="tabpanel" aria-labelledby={`rhythm-tab-${item.id}`} key={item.id}>

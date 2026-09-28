@@ -1,4 +1,5 @@
 import ServiceMoment from "./components/service-moment.jsx";
+import useScrollScene from "./components/use-scroll-scene.jsx";
 
 const { useEffect, useRef, useState } = React;
 
@@ -80,91 +81,39 @@ function useReducedMotion() {
 function CapabilityMap() {
   const [active, setActive] = useState(0);
   const reducedMotion = useReducedMotion();
-  const [stage, setStage] = useState(0);
-  const [running, setRunning] = useState(() => !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches);
-  const [visible, setVisible] = useState(false);
   const family = CAPABILITY_FAMILIES[active];
   const refs = useRef([]);
   const labRef = useRef(null);
+  const { phase: stage, selectPhase } = useScrollScene({ ref: labRef, count: 4, reducedMotion, resetKey: active });
   const modes = ["document", "flow", "agent", "growth"];
   const stages = ["Entender", "Preparar", "Validar", "Entregar"];
   const caption = [family.lab.project, family.lab.capabilities.join(" · "), "Revisamos el resultado con la persona responsable antes de avanzar.", family.lab.result][stage];
 
-  useEffect(() => {
-    if (!reducedMotion) return;
-    setRunning(false);
-  }, [reducedMotion]);
-
-  useEffect(() => {
-    const lab = labRef.current;
-    if (!lab) return undefined;
-    const syncVisibility = () => {
-      const rect = lab.getBoundingClientRect();
-      const visibleHeight = Math.max(0, Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0));
-      setVisible(!document.hidden && visibleHeight >= Math.min(rect.height, window.innerHeight) * .25);
-    };
-    if (!("IntersectionObserver" in window)) {
-      syncVisibility();
-      document.addEventListener("visibilitychange", syncVisibility);
-      return () => document.removeEventListener("visibilitychange", syncVisibility);
-    }
-    const observer = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting && !document.hidden), { threshold: .25 });
-    observer.observe(lab);
-    document.addEventListener("visibilitychange", syncVisibility);
-    syncVisibility();
-    return () => {
-      observer.disconnect();
-      document.removeEventListener("visibilitychange", syncVisibility);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!running || reducedMotion || !visible) return undefined;
-    const timer = window.setTimeout(() => {
-      if (stage >= stages.length - 2) {
-        setStage(stages.length - 1);
-        setRunning(false);
-      } else setStage((value) => value + 1);
-    }, 2600);
-    return () => window.clearTimeout(timer);
-  }, [active, stage, running, reducedMotion, visible]);
-
   const chooseFamily = (index) => {
     setActive(index);
-    setStage(0);
-    setRunning(!reducedMotion);
-  };
-  const chooseStage = (index) => {
-    setStage(index);
-    setRunning(false);
-  };
-  const toggleSequence = () => {
-    if (reducedMotion) { setStage((value) => (value + 1) % stages.length); return; }
-    if (running) setRunning(false);
-    else if (stage >= stages.length - 1) { setStage(0); setRunning(true); }
-    else setRunning(true);
+    selectPhase(0);
   };
 
-  return <div ref={labRef} className={`svc-lab${running && visible ? " is-running" : ""}`} aria-label="Explorar cómo trabaja cada área de MEDLA">
+  return <div ref={labRef} className="svc-lab" data-phase={stage} aria-label="Explorar cómo trabaja cada área de MEDLA">
     <header className="svc-lab__head">
       <div><span>DEL PROBLEMA A LA ENTREGA</span></div>
-      <button type="button" onClick={toggleSequence} aria-label={reducedMotion ? "Siguiente fase" : running ? "Pausar secuencia" : stage >= stages.length - 1 ? "Repetir secuencia" : "Continuar secuencia"}><i className={running && visible ? "is-live" : ""} />{reducedMotion ? "SIGUIENTE" : running ? "PAUSAR" : stage >= stages.length - 1 ? "REPETIR" : "CONTINUAR"}</button>
+      <span className="svc-lab__phase-index">0{stage + 1} / 0{stages.length}</span>
     </header>
     <div className="svc-lab__routes" role="tablist" aria-label="Familias de capacidades">
       {CAPABILITY_FAMILIES.map((item,index) => <button key={item.id} ref={(node) => { refs.current[index] = node; }} type="button" role="tab" id={`map-tab-${item.id}`} aria-controls="map-panel" aria-selected={active === index} tabIndex={active === index ? 0 : -1} onClick={() => chooseFamily(index)} onKeyDown={(event) => {
         if (!["ArrowLeft","ArrowRight","Home","End"].includes(event.key)) return;
         event.preventDefault();
         const next = event.key === "Home" ? 0 : event.key === "End" ? CAPABILITY_FAMILIES.length - 1 : (index + (event.key === "ArrowRight" ? 1 : -1) + CAPABILITY_FAMILIES.length) % CAPABILITY_FAMILIES.length;
-        chooseFamily(next); refs.current[next]?.focus();
+        chooseFamily(next); refs.current[next]?.focus({ preventScroll: true });
       }}><span>{item.number}</span><b>{item.label}</b><i /></button>)}
     </div>
     <article id="map-panel" className="svc-lab__panel" role="tabpanel" aria-labelledby={`map-tab-${family.id}`} key={family.id}>
-      <ServiceMoment mode={modes[active]} stage={stage} playing={running && visible} reducedMotion={reducedMotion} />
+      <ServiceMoment mode={modes[active]} stage={stage} reducedMotion={reducedMotion} />
       <div className="svc-lab__caption" key={stage}><span>0{stage + 1} / {stages[stage]}</span><p>{caption}</p></div>
     </article>
     <footer className="svc-lab__timeline">
       <span className="svc-lab__status">Ejemplo ilustrativo</span>
-      <div role="group" aria-label="Explorar las fases del laboratorio">{stages.map((label,index) => <button key={label} type="button" className={`${index === stage ? "is-active" : ""}${index < stage ? " is-complete" : ""}`} aria-pressed={index === stage} onClick={() => chooseStage(index)}><span>0{index+1}</span>{label}<i /></button>)}</div>
+      <div role="group" aria-label="Explorar las fases del laboratorio">{stages.map((label,index) => <button key={label} type="button" className={`${index === stage ? "is-active" : ""}${index < stage ? " is-complete" : ""}`} aria-pressed={index === stage} onClick={() => selectPhase(index)}><span>0{index+1}</span>{label}<i /></button>)}</div>
     </footer>
   </div>;
 }

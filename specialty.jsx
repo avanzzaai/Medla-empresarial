@@ -1,4 +1,5 @@
 import ServiceMoment from "./components/service-moment.jsx";
+import useScrollScene from "./components/use-scroll-scene.jsx";
 
 const { useEffect, useRef, useState } = React;
 
@@ -539,61 +540,10 @@ function useReducedMotion() {
 }
 
 function SystemScene({ scene }) {
-  const [active, setActive] = useState(0);
-  const [available, setAvailable] = useState(false);
   const reducedMotion = useReducedMotion();
-  const [running, setRunning] = useState(() => !window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   const sceneRef = useRef(null);
   const tabRefs = useRef([]);
-  const last = scene.nodes.length - 1;
-
-  useEffect(() => {
-    let inView = !("IntersectionObserver" in window);
-    const update = () => setAvailable(inView && !document.hidden);
-    const observer = "IntersectionObserver" in window ? new IntersectionObserver(([entry]) => {
-      inView = entry.isIntersecting;
-      update();
-    }, { threshold: .25 }) : null;
-    if (sceneRef.current) observer?.observe(sceneRef.current);
-    document.addEventListener("visibilitychange", update);
-    update();
-    return () => {
-      observer?.disconnect();
-      document.removeEventListener("visibilitychange", update);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (reducedMotion) {
-      setRunning(false);
-      return undefined;
-    }
-    if (!running || !available) return undefined;
-    const timer = window.setTimeout(() => {
-      if (active >= last - 1) {
-        setActive(last);
-        setRunning(false);
-      } else setActive((value) => value + 1);
-    }, 2700);
-    return () => window.clearTimeout(timer);
-  }, [active, available, last, reducedMotion, running]);
-
-  const toggleSequence = () => {
-    if (reducedMotion) {
-      setActive((value) => value >= last ? 0 : value + 1);
-      setRunning(false);
-      return;
-    }
-    if (running) {
-      setRunning(false);
-      return;
-    }
-    if (active >= last) setActive(0);
-    setRunning(true);
-  };
-  const controlLabel = reducedMotion
-    ? active >= last ? "Volver al inicio" : "Siguiente fase"
-    : running ? "Pausar secuencia" : active >= last ? "Repetir secuencia" : "Continuar secuencia";
+  const { phase: active, selectPhase } = useScrollScene({ ref: sceneRef, count: scene.nodes.length, reducedMotion, resetKey: scene.mode });
 
   const move = (event, index) => {
     let next = index;
@@ -603,18 +553,17 @@ function SystemScene({ scene }) {
     else if (event.key === "End") next = scene.nodes.length - 1;
     else return;
     event.preventDefault();
-    setActive(next);
-    setRunning(false);
-    tabRefs.current[next]?.focus();
+    selectPhase(next);
+    tabRefs.current[next]?.focus({ preventScroll: true });
   };
 
   return (
-    <div ref={sceneRef} className={`sp-scene sp-scene--${scene.mode}`} data-running={running && available} aria-label={`Diagrama interactivo: ${scene.caption}`}>
+    <div ref={sceneRef} className={`sp-scene sp-scene--${scene.mode}`} data-phase={active} aria-label={`Diagrama interactivo: ${scene.caption}`}>
       <div className="sp-scene__topline">
         <span>{scene.code}</span>
-        <button type="button" onClick={toggleSequence}><i aria-hidden="true" /> {controlLabel}</button>
+        <span className="sp-scene__phase-index">0{active + 1} / 0{scene.nodes.length}</span>
       </div>
-      <ServiceMoment mode={scene.mode} stage={active} playing={running && available} reducedMotion={reducedMotion} />
+      <ServiceMoment mode={scene.mode} stage={active} reducedMotion={reducedMotion} />
       <div className="sp-scene__journey">
         <div className="sp-scene__stages" role="tablist" aria-label="Secuencia de trabajo">
           {scene.nodes.map((node, index) => (
@@ -628,7 +577,7 @@ function SystemScene({ scene }) {
               aria-selected={active === index}
               aria-controls="scene-detail"
               tabIndex={active === index ? 0 : -1}
-              onClick={() => { setActive(index); setRunning(false); }}
+              onClick={() => selectPhase(index)}
               onKeyDown={(event) => move(event, index)}
             >
               <span>{String(index + 1).padStart(2, "0")}</span>

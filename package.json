@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build": "node scripts/build.mjs",
-    "check": "node scripts/build.mjs && node --check site-shell.js && node --check app.js && node --check contacto.js && node --check servicios.js && node --check nosotros.js && node --check blog.js && node --check specialty.js && node --check api/contact.js && node scripts/check-site.mjs && node api/contact.test.js",
+    "check": "node scripts/build.mjs && node --check site-shell.js && node --check app.js && node --check contacto.js && node --check servicios.js && node --check nosotros.js && node --check blog.js && node --check specialty.js && node --check api/contact.js && node scripts/check-site.mjs && node scripts/test-scroll-scene.mjs && node api/contact.test.js",
     "test": "node api/contact.test.js",
     "dev": "node scripts/dev-server.mjs"
   },

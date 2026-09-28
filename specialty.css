@@ -282,10 +282,10 @@ body.specialty-site .sp-button--signal:hover { background: #fff; box-shadow: 0 8
 }
 .sp-hero__field::before { right: -18%; top: -34%; }
 .sp-hero__field::after { left: -44%; bottom: -70%; }
-.sp-hero__field i { position: absolute; width: 4px; height: 4px; border-radius: 50%; background: var(--sp-signal); box-shadow: 0 0 20px color-mix(in srgb, var(--sp-signal) 60%, transparent); opacity: .7; animation: sp-float 7s ease-in-out infinite; }
+.sp-hero__field i { position: absolute; width: 4px; height: 4px; border-radius: 50%; background: var(--sp-signal); opacity: .45; }
 .sp-hero__field i:first-child { left: 8%; top: 31%; }
-.sp-hero__field i:nth-child(2) { right: 46%; top: 16%; animation-delay: -2s; }
-.sp-hero__field i:last-child { right: 8%; bottom: 20%; animation-delay: -4s; }
+.sp-hero__field i:nth-child(2) { right: 46%; top: 16%; }
+.sp-hero__field i:last-child { right: 8%; bottom: 20%; }
 .sp-hero__layout {
   position: relative;
   z-index: 2;
@@ -345,7 +345,7 @@ body.specialty-site .sp-button--signal:hover { background: #fff; box-shadow: 0 8
 }
 .sp-scene__topline { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-bottom: 18px; border-bottom: 1px solid rgba(255,255,255,.1); color: rgba(255,255,255,.42); font-size: 8px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; }
 .sp-scene__topline span:last-child { display: flex; align-items: center; gap: 7px; }
-.sp-scene__topline i { width: 6px; height: 6px; border-radius: 50%; background: var(--sp-signal); box-shadow: 0 0 12px var(--sp-signal); animation: sp-pulse 2.2s ease-in-out infinite; }
+.sp-scene__phase-index { color:#a8b7b6; font-size:10px; letter-spacing:.12em; white-space:nowrap; font-variant-numeric:tabular-nums; }
 .sp-scene__field { position: relative; aspect-ratio: 1; margin: 14px 0; }
 .sp-scene__visual { position: absolute; inset: 0; overflow: hidden; border: 1px solid rgba(255,255,255,.07); background: radial-gradient(circle at center, color-mix(in srgb, var(--sp-signal) 10%, transparent), transparent 44%); }
 .sp-scene__visual::before { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,.026) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.026) 1px, transparent 1px); background-size: 34px 34px; content: ""; mask-image: linear-gradient(to bottom, transparent, #000 16%, #000 84%, transparent); }
@@ -365,7 +365,7 @@ body.specialty-site .sp-button--signal:hover { background: #fff; box-shadow: 0 8
 .sp-instrument--document .sp-instrument__segments i span { right: 0; top: -13px; }
 
 .sp-instrument--agent { inset: 20%; border: 1px solid rgba(121,210,197,.22); border-radius: 28%; transform: rotate(45deg); }
-.sp-instrument--agent::before { position: absolute; inset: 18%; border: 1px dashed color-mix(in srgb,var(--sp-signal) 46%,transparent); border-radius: 50%; content: ""; animation: sp-spin 24s linear infinite; }
+.sp-instrument--agent::before { position: absolute; inset: 18%; border: 1px dashed color-mix(in srgb,var(--sp-signal) 46%,transparent); border-radius: 50%; content: ""; }
 .sp-instrument--agent strong, .sp-instrument--agent > small { transform: rotate(-45deg); }
 .sp-instrument--agent .sp-instrument__segments i { width: 28%; height: 28%; transform: rotate(-45deg); }
 .sp-instrument--agent .sp-instrument__segments i:nth-child(1) { left: -14%; top: -14%; }.sp-instrument--agent .sp-instrument__segments i:nth-child(2) { right: -14%; top: -14%; }.sp-instrument--agent .sp-instrument__segments i:nth-child(3) { right: -14%; bottom: -14%; }.sp-instrument--agent .sp-instrument__segments i:nth-child(4) { left: -14%; bottom: -14%; }
@@ -416,11 +416,11 @@ body.specialty-site .sp-button--signal:hover { background: #fff; box-shadow: 0 8
 .sp-instrument--intake .sp-instrument__segments i span { left: 10px; top: 50%; transform: translateY(-50%); }
 .sp-scene__ring { position: absolute; left: 50%; top: 50%; border: 1px solid rgba(255,255,255,.11); border-radius: 50%; transform: translate(-50%,-50%); }
 .sp-scene__ring--outer { width: 74%; aspect-ratio: 1; }
-.sp-scene__ring--inner { width: 46%; aspect-ratio: 1; border-style: dashed; border-color: color-mix(in srgb, var(--sp-signal) 36%, transparent); animation: sp-orbit 28s linear infinite reverse; }
+.sp-scene__ring--inner { width: 46%; aspect-ratio: 1; border-style: dashed; border-color: color-mix(in srgb, var(--sp-signal) 36%, transparent); }
 .sp-scene__axis { position: absolute; left: 50%; top: 50%; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--sp-signal) 30%, transparent), transparent); transform: translate(-50%,-50%); }
 .sp-scene__axis--x { width: 76%; height: 1px; }
 .sp-scene__axis--y { width: 1px; height: 76%; background: linear-gradient(transparent, color-mix(in srgb, var(--sp-signal) 30%, transparent), transparent); }
-.sp-scene__trace { position: absolute; inset: 13%; border-radius: 50%; animation: sp-spin 12s linear infinite; }
+.sp-scene__trace { position: absolute; inset: 13%; border-radius: 50%; }
 .sp-scene__trace i { position: absolute; left: 50%; top: -3px; width: 7px; height: 7px; border: 1px solid var(--sp-signal); border-radius: 50%; background: var(--sp-ink); box-shadow: 0 0 18px var(--sp-signal); }
 .sp-scene__core {
   position: absolute;
@@ -441,7 +441,7 @@ body.specialty-site .sp-button--signal:hover { background: #fff; box-shadow: 0 8
   box-shadow: 0 0 0 10px rgba(255,255,255,.02), 0 26px 70px rgba(0,0,0,.45), inset 0 1px rgba(255,255,255,.12);
   transform: translate(-50%,-50%);
 }
-.sp-scene__core::after { position: absolute; inset: 11px; border: 1px dashed rgba(255,255,255,.16); border-radius: inherit; content: ""; animation: sp-spin 20s linear infinite; }
+.sp-scene__core::after { position: absolute; inset: 11px; border: 1px dashed rgba(255,255,255,.16); border-radius: inherit; content: ""; }
 .sp-scene__core span { position: relative; z-index: 1; font-family: var(--sp-display); font-size: 30px; font-weight: 600; letter-spacing: -.03em; }
 .sp-scene__core small { position: relative; z-index: 1; color: rgba(255,255,255,.48); font-size: 7px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; }
 .sp-scene--document .sp-scene__core { border-radius: 12px; }
@@ -594,9 +594,9 @@ body.specialty-site .sp-button--signal:hover { background: #fff; box-shadow: 0 8
 .sp-boundary__signal::before,
 .sp-boundary__signal::after { position: absolute; inset: 18%; border: 1px solid rgba(255,255,255,.16); border-radius: 50%; content: ""; }
 .sp-boundary__signal::after { inset: 37%; background: rgba(255,255,255,.08); box-shadow: 0 0 70px rgba(255,255,255,.12); }
-.sp-boundary__signal span { position: absolute; left: 50%; top: 50%; width: 46%; height: 1px; background: linear-gradient(90deg, rgba(255,255,255,.8), transparent); transform-origin: left; animation: sp-radar 9s linear infinite; }
-.sp-boundary__signal span:nth-child(2) { animation-delay: -3s; }
-.sp-boundary__signal span:nth-child(3) { animation-delay: -6s; }
+.sp-boundary__signal span { position: absolute; left: 50%; top: 50%; width: 46%; height: 1px; background: linear-gradient(90deg, rgba(255,255,255,.8), transparent); transform-origin: left; }
+.sp-boundary__signal span:nth-child(2) { transform:rotate(120deg); }
+.sp-boundary__signal span:nth-child(3) { transform:rotate(240deg); }
 
 /* Contact */
 .sp-contact { position: relative; min-height: 780px; display: grid; place-items: center; overflow: hidden; color: #fff; background: var(--sp-ink); }
@@ -605,8 +605,8 @@ body.specialty-site .sp-button--signal:hover { background: #fff; box-shadow: 0 8
 .sp-contact__orbit::before,
 .sp-contact__orbit::after { position: absolute; inset: 15%; border: 1px solid rgba(255,255,255,.045); border-radius: 50%; content: ""; }
 .sp-contact__orbit::after { inset: 33%; }
-.sp-contact__orbit i { position: absolute; left: 50%; top: 50%; width: 50%; height: 1px; background: linear-gradient(90deg, color-mix(in srgb, var(--sp-signal) 50%, transparent), transparent); transform-origin: left; animation: sp-radar 18s linear infinite; }
-.sp-contact__orbit i:last-child { animation-direction: reverse; animation-duration: 24s; }
+.sp-contact__orbit i { position: absolute; left: 50%; top: 50%; width: 50%; height: 1px; background: linear-gradient(90deg, color-mix(in srgb, var(--sp-signal) 50%, transparent), transparent); transform-origin: left; transform:rotate(22deg); }
+.sp-contact__orbit i:last-child { transform:rotate(160deg); }
 .sp-contact__inner { position: relative; z-index: 1; text-align: center; }
 .sp-contact__inner .sp-kicker { justify-content: center; }
 .sp-contact h2 { max-width: 950px; margin: 0 auto 30px; font-family: var(--sp-display); font-size: clamp(46px,6.2vw,90px); font-weight: 500; letter-spacing: -.055em; line-height: 1.05; text-wrap: balance; }
@@ -817,9 +817,6 @@ body.specialty-site .sp-button--signal:hover { background: #fff; box-shadow: 0 8
 
 /* Service demonstrations: the artwork carries the story; tabs only control its four phases. */
 .sp-hero h1 em { color: color-mix(in srgb,var(--sp-signal) 88%,white 12%); }
-.sp-scene__topline button { display:inline-flex; align-items:center; gap:8px; padding:7px 0 7px 12px; border:0; color:rgba(255,255,255,.48); background:transparent; font:600 8px/1 var(--sp-body); letter-spacing:.14em; text-transform:uppercase; cursor:pointer; }
-.sp-scene__topline button i { width:6px; height:6px; border-radius:50%; background:var(--sp-signal); box-shadow:0 0 0 5px color-mix(in srgb,var(--sp-signal) 8%,transparent); animation:none; }
-.sp-scene[data-running="true"] .sp-scene__topline button i { animation:sp-pulse 2.2s ease-in-out infinite; }
 .sp-scene > .medla-moment { margin-block: 4px 12px; }
 .sp-scene__journey { position:relative; padding:0; }
 .sp-scene__stages { position:relative; z-index:1; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); }
@@ -846,7 +843,6 @@ body.specialty-site .sp-button--signal:hover { background: #fff; box-shadow: 0 8
   .sp-scene__detail > div strong { font-size:27px; }
   .sp-scene__detail > p { font-size:12px; }
 }
-@media (prefers-reduced-motion:reduce) { .sp-scene__topline button i { animation:none; } }
 
 @media (max-width: 980px) and (orientation: landscape) and (max-height: 600px) {
   .sp-hero__layout {
