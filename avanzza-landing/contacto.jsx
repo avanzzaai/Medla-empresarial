@@ -207,7 +207,7 @@ function CtForm({ pathId }) {
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState(null);
 
-  const WEBHOOK_URL = "https://services.leadconnectorhq.com/hooks/vg8CkhnTjUIDbxcw3b9h/webhook-trigger/3f21a9eb-a6de-4110-b0a6-ef2e9ffac8cc";
+  const WEBHOOK_URL = "/api/contact";
 
   const totalSteps = 4;
   const toggleAlcance = (opt) =>

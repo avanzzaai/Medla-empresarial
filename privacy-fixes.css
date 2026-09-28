@@ -1,0 +1,51 @@
+.privacy-brand {
+  width: 72px;
+  height: 62px;
+  display: grid;
+  place-items: center;
+}
+
+.privacy-brand img {
+  display: block;
+  width: 68px;
+  max-height: 60px;
+  object-fit: contain;
+  filter: invert(1);
+  opacity: .92;
+}
+
+.privacy-footer > a:first-child {
+  width: 105px;
+}
+
+.privacy-footer img {
+  display: block;
+  width: 100%;
+  max-height: 100px;
+  object-fit: contain;
+  filter: invert(1);
+}
+
+.privacy-footer > div { color: rgba(255,255,255,.66); }
+.privacy-kicker { color: rgba(255,255,255,.64); }
+.privacy-hero-note span { color: rgba(255,255,255,.64); }
+.privacy-body aside a { color: rgba(8,10,15,.68); }
+
+@media (max-width: 850px) {
+  .privacy-body aside { scroll-snap-type: x proximity; scroll-padding-inline: 20px; }
+  .privacy-body aside a { scroll-snap-align: start; }
+  .privacy-body aside::after {
+    content: "Desliza →";
+    position: sticky;
+    right: 0;
+    flex: 0 0 auto;
+    align-self: center;
+    padding: 7px 9px;
+    color: rgba(8,10,15,.64);
+    background: rgba(232,229,222,.94);
+    border: 1px solid rgba(8,10,15,.15);
+    font: 600 7px/1 Inter, system-ui, sans-serif;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+  }
+}
